@@ -56,7 +56,7 @@ configurations {
     implementation.extendsFrom(embed)
     implementation.extendsFrom(contain)
 }
-
+    
 unimined.minecraft {
     version "1.12.2"
 
@@ -82,6 +82,14 @@ unimined.minecraft {
         }
     }
 
+    defaultRemapJar = false
+
+    remap(tasks.shadowJar) {
+        prodNamespace("searge")
+        mixinRemap {
+            disableRefmap()
+        }
+    }
 
 }
 
@@ -146,7 +154,7 @@ jar {
         manifest {
             def attribute_map = [:]
             attribute_map['ModType'] = "CRL"
-            attribute_map['MixinConfigs'] = "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json"
+            attribute_map['MixinConfigs'] = "${mod_id}.default.mixin.json"
             if (configurations.contain.size() > 0) {
                 attribute_map['ContainedDeps'] = configurations.contain.collect { it.name }.join(' ')
                 attribute_map['NonModDeps'] = true
@@ -164,16 +172,7 @@ jar {
         }
     }
     if (propertyBool('enable_shadow')) {
-        finalizedBy(shadowJar)
-    }
-}
-
-tasks.remapJar {
-    doFirst {
-        logging.captureStandardOutput LogLevel.INFO
-    }
-    doLast {
-        logging.captureStandardOutput LogLevel.QUIET
+        finalizedBy(tasks.named("remapShadowJar"))
     }
 }
 
@@ -226,6 +225,7 @@ def generateReferenceClass() {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
 
 apply from: 'gradle/scripts/publishing.gradle'
 apply from: 'gradle/scripts/extra.gradle'

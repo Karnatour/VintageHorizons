@@ -1,15 +1,12 @@
 {
     "required": true,
     "package": "com.seibel.distanthorizons.mixin",
-    "compatibilityLevel": "JAVA_21",
+    "compatibilityLevel": "JAVA_8",
     "target": "@env(DEFAULT)",
-    "client": [
-        "MinecraftMixin",
+    "mixins": [
         "MixinEntityRenderer",
         "MixinTextureAtlasSprite"
     ],
-    "mixins": [],
-    "server": [],
     "setSourceFile": true,
     "minVersion": "0.8.7"
 }

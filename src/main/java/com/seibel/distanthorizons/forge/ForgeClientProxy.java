@@ -36,9 +36,6 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapp
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
-import net.minecraft.init.Items;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -77,10 +74,6 @@ public class ForgeClientProxy implements AbstractModInitializer.IEventProxy
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(FMLCommonHandler.instance());
 		ForgePluginPacketSender.setPacketHandler(ClientApi.INSTANCE::pluginMessageReceived);
-
-		ItemStack stack = new ItemStack(Items.DYE, 1, EnumDyeColor.LIGHT_BLUE.getDyeDamage());
-		String s = stack.getDisplayName();
-		s = s;
 	}
 
 

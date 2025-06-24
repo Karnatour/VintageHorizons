@@ -37,7 +37,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.MobEffects;
-import net.minecraft.potion.Potion;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL15;
 

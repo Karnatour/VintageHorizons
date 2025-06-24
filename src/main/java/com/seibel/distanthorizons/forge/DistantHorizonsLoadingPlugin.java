@@ -27,7 +27,8 @@ public class DistantHorizonsLoadingPlugin implements IFMLLoadingPlugin
 	@Override
 	public void injectData(Map<String, Object> data)
 	{
-		
+		//MixinBootstrap.init();
+		//Mixins.addConfiguration("distanthorizons.default.mixin.json");
 	}
 	@Override
 	public @Nullable String getAccessTransformerClass()
