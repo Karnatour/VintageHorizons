@@ -29,7 +29,6 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 import java.util.List;
@@ -39,8 +38,6 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.ColorizerFoliage;
 import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeColorHelper;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -85,6 +82,7 @@ public class ClientBlockStateColorCache
 	private final IClientLevelWrapper clientLevelWrapper;
 	private final IBlockState blockState;
 	private final IBlockAccess level;
+	private final DhBlockPos blockPos;
 	
 	private boolean isColorResolved = false;
 	private int baseColor = 0;
@@ -162,12 +160,13 @@ public class ClientBlockStateColorCache
 	// constructor //
 	//=============//
 	
-	public ClientBlockStateColorCache(IBlockState blockState, IClientLevelWrapper samplingLevel)
+	public ClientBlockStateColorCache(IBlockState blockState, IClientLevelWrapper samplingLevel,DhBlockPos blockPos)
 	{
 		this.blockState = blockState;
 		this.clientLevelWrapper = samplingLevel;
 		this.level = (IBlockAccess) samplingLevel.getWrappedMcObject();
 		this.resolveColors();
+		this.blockPos = blockPos;
 	}
 	
 	
@@ -210,7 +209,7 @@ public class ClientBlockStateColorCache
 				{
 					BakedQuad firstQuad = quads.get(0);
 					this.needPostTinting = firstQuad.hasTintIndex();
-					this.needShade = false; // no isShade() in 1.12.2
+					this.needShade = false;
 					this.tintIndex = firstQuad.getTintIndex();
 					
 					this.baseColor = calculateColorFromTexture(firstQuad.getSprite(), ColorMode.getColorMode(this.blockState.getBlock()));
@@ -285,9 +284,9 @@ public class ClientBlockStateColorCache
 					//_ OpenGL RGBA format Java Order: 0xAA BB GG RR
 					tempColor = TextureAtlasSpriteWrapper.getPixelRGBA(texture, 0, u, v);
 					
-					int r = (tempColor & 0x000000FF);
+					int b = (tempColor & 0x000000FF);
 					int g = (tempColor & 0x0000FF00) >>> 8;
-					int b = (tempColor & 0x00FF0000) >>> 16;
+					int r = (tempColor & 0x00FF0000) >>> 16;
 					int a = (tempColor & 0xFF000000) >>> 24;
 					int scale = 1;
 					if (colorMode == ColorMode.Leaves)
