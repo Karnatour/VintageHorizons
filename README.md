@@ -4,4 +4,4 @@
 ### - Distant horizons team for creating this mod
 ### - DarkShadow44 for the 1.7.10 fork of DH 
 
-## This is my first mod, expect things to be broken
+## This is my first mod, expect things to be broken, some things to be unfinished, and some things to be missing.
