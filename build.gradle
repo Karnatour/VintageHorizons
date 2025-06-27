@@ -226,6 +226,16 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+tasks.register('copyJarToFolder', Copy) {
+    dependsOn build
+    from("$buildDir/libs/")
+    include("distanthorizons-1.0.0.jar")
+    into("I:/Hry/Prism/Cleanroom-MMC-instance-0.3.0-alpha(2)/minecraft/mods")
+}
+
+tasks.named('remapShadowJar') {
+    //finalizedBy('copyJarToFolder')
+}
 
 apply from: 'gradle/scripts/publishing.gradle'
 apply from: 'gradle/scripts/extra.gradle'
