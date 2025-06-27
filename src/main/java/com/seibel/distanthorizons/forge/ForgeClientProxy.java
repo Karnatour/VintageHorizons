@@ -66,8 +66,8 @@ public class ForgeClientProxy implements AbstractModInitializer.IEventProxy
 
 	private static World GetEventLevel(WorldEvent e) { return e.getWorld(); }
 
-
-
+	
+	
 	@Override
 	public void registerEvents()
 	{

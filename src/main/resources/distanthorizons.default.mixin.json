@@ -1,16 +1,15 @@
 {
     "required": true,
     "package": "com.seibel.distanthorizons.mixin",
-    "compatibilityLevel": "JAVA_8",
+    "compatibilityLevel": "JAVA_21",
     "target": "@env(DEFAULT)",
     "mixins": [],
-    "setSourceFile": true,
     "minVersion": "0.8.7",
+    "plugin": "com.seibel.distanthorizons.forge.DistantHorizonsConfigPlugin",
     "client": [
         "MixinActiveRenderInfo",
         "MixinEntityRenderer",
         "MixinOptionsScreen",
-        "MixinRenderGlobal",
-        "MixinTextureAtlasSprite"
+        "MixinRenderGlobal"
     ]
 }

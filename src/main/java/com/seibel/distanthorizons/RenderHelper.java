@@ -13,17 +13,32 @@ import org.lwjgl.opengl.GL32;
 import java.nio.FloatBuffer;
 
 public class RenderHelper {
-	public static void drawLods()
-	{
+	public static void drawLods() {
+		boolean alphaTest = GL32.glIsEnabled(GL32.GL_ALPHA_TEST);
+		boolean blend = GL32.glIsEnabled(GL32.GL_BLEND);
+		int depthFunc = GL32.glGetInteger(GL32.GL_DEPTH_FUNC);
+		
 		GL32.glDisable(GL32.GL_ALPHA_TEST);
+		
 		Mat4f mcModelViewMatrix = getModelViewMatrix();
 		Mat4f mcProjectionMatrix = getProjectionMatrix();
 		float frameTime = Minecraft.getMinecraft().timer.renderPartialTicks;
 		IClientLevelWrapper levelWrapper = ClientLevelWrapper.getWrapper(Minecraft.getMinecraft().world);
 		ClientApi.INSTANCE.renderLods(levelWrapper, mcModelViewMatrix, mcProjectionMatrix, frameTime);
-		GL32.glDepthFunc(GL32.GL_LEQUAL);
-		GL32.glEnable(GL32.GL_ALPHA_TEST);
-		GL32.glDisable(GL32.GL_BLEND);
+		
+		GL32.glDepthFunc(depthFunc);
+		
+		if (alphaTest) {
+			GL32.glEnable(GL32.GL_ALPHA_TEST);
+		} else {
+			GL32.glDisable(GL32.GL_ALPHA_TEST);
+		}
+		
+		if (blend) {
+			GL32.glEnable(GL32.GL_BLEND);
+		} else {
+			GL32.glDisable(GL32.GL_BLEND);
+		}
 	}
 	
 	private static Matrix4f modelViewMatrix;
