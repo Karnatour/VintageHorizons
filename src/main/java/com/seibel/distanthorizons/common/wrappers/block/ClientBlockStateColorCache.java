@@ -25,6 +25,7 @@ import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos;
 import com.seibel.distanthorizons.core.util.ColorUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import net.minecraft.block.*;
+import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -36,9 +37,7 @@ import java.util.Random;
 
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.ColorizerFoliage;
 import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.biome.BiomeColorHelper;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
@@ -160,7 +159,7 @@ public class ClientBlockStateColorCache
 	// constructor //
 	//=============//
 	
-	public ClientBlockStateColorCache(IBlockState blockState, IClientLevelWrapper samplingLevel,DhBlockPos blockPos)
+	public ClientBlockStateColorCache(IBlockState blockState, IClientLevelWrapper samplingLevel, DhBlockPos blockPos)
 	{
 		this.blockState = blockState;
 		this.clientLevelWrapper = samplingLevel;
@@ -394,53 +393,57 @@ public class ClientBlockStateColorCache
 	// public getter //
 	//===============//
 	
-	public int getColor(BiomeWrapper biomeWrapper, DhBlockPos pos, ClientLevelWrapper level) {
-		if (!this.needPostTinting) {
+	public int getColor(BiomeWrapper biomeWrapper, DhBlockPos pos, ClientLevelWrapper level)
+	{
+		if (!this.needPostTinting)
+		{
 			return this.baseColor;
 		}
 		
-		if (BROKEN_BLOCK_STATES.contains(this.blockState)) {
+		if (BROKEN_BLOCK_STATES.contains(this.blockState))
+		{
 			return this.baseColor;
 		}
 		
 		WorldClient world = (WorldClient) level.getWrappedMcObject();
 		BlockPos mcPos = new BlockPos(pos.getX(), pos.getY(), pos.getZ());
-		int tintColor;
-		
-		if (blockState.getBlock() instanceof BlockGrass) {
-			tintColor = BiomeColorHelper.getGrassColorAtPos(world, mcPos);
-		} else if (blockState.getBlock() instanceof BlockDoublePlant) {
-			int meta = blockState.getBlock().getMetaFromState(blockState);
-			tintColor = (meta != 2 && meta != 3) ? 0xFFFFFF : BiomeColorHelper.getGrassColorAtPos(world, mcPos);
-		} else if (blockState.getBlock() instanceof BlockTallGrass) {
-			int meta = blockState.getBlock().getMetaFromState(blockState);
-			tintColor = (meta == 0) ? 0xFFFFFF : BiomeColorHelper.getGrassColorAtPos(world, mcPos);
-		} else if (blockState.getBlock() instanceof BlockOldLeaf) {
-			int meta = blockState.getBlock().getMetaFromState(blockState);
-			switch (meta & 3) {
-				case 1:
-					tintColor = ColorizerFoliage.getFoliageColorPine();
-					break;
-				case 2:
-					tintColor = ColorizerFoliage.getFoliageColorBirch();
-					break;
-				default:
-					tintColor = BiomeColorHelper.getFoliageColorAtPos(world, mcPos);
+		int tintColor = -1;
+		Block block = this.blockState.getBlock();
+		if (block instanceof BlockGrass || block instanceof BlockBush)
+		{
+			tintColor = biomeWrapper.biome.getGrassColorAtPos(mcPos);
+		}
+		else if (block instanceof BlockLeaves || block instanceof BlockOldLeaf || block instanceof BlockNewLeaf)
+		{
+			
+			tintColor = biomeWrapper.biome.getFoliageColorAtPos(mcPos);
+		}
+		else if (block instanceof BlockLiquid)
+		{
+			if (blockState.getMaterial() == Material.WATER)
+			{
+				tintColor = biomeWrapper.biome.getWaterColor();
 			}
-		} else if (blockState.getBlock() instanceof BlockLeaves) {
-			tintColor = BiomeColorHelper.getFoliageColorAtPos(world, mcPos);
-		} else {
-			try {
+		}
+		else
+		{
+			try
+			{
 				tintColor = Minecraft.getMinecraft().getBlockColors().colorMultiplier(blockState, world, mcPos, tintIndex);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				BROKEN_BLOCK_STATES.add(this.blockState);
 				return this.baseColor;
 			}
 		}
 		
-		if (tintColor != -1) {
+		if (tintColor != -1)
+		{
 			return ColorUtil.multiplyARGBwithRGB(this.baseColor, tintColor);
-		} else {
+		}
+		else
+		{
 			return this.baseColor;
 		}
 	}
