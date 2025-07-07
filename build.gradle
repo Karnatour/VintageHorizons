@@ -6,7 +6,7 @@ plugins {
     id 'maven-publish'
     id 'com.gradleup.shadow' version '9.0.0-beta12' // Remove this line and shadowJar task if you don't need shadow
     id 'org.jetbrains.changelog' version '2.2.1'
-    id 'xyz.wagyourtail.unimined' version '1.3.14'
+    id 'xyz.wagyourtail.unimined' version '1.4.1'
 }
 
 apply from: 'gradle/scripts/helpers.gradle'
@@ -61,6 +61,7 @@ unimined.minecraft {
     version "1.12.2"
 
     mappings {
+        searge()
         mcp("stable", "39-1.12")
     }
 
@@ -68,15 +69,17 @@ unimined.minecraft {
         if (propertyBool('use_access_transformer')) {
             accessTransformer "${rootProject.projectDir}/src/main/resources/" +  propertyString('access_transformer_locations')
         }
-        loader "0.3.2-alpha"
+        loader "0.3.8-alpha"
         runs.auth.username = minecraft_username
         runs.all {
+            var map = getSystemProperties(); 
+            map["cleanroom.dev.mixin"] = "${mod_id}.default.mixin.json"
             if (hasProperty("extra_jvm_args")) {
                 jvmArgs(propertyString('extra_jvm_args'))
             }
             if (propertyBool('enable_foundation_debug')) {
-                systemProperty("foundation.dump", "true")
-                systemProperty("foundation.verbose", "true")
+                map.put('foundation.dump', 'true')
+                map.put('foundation.verbose', 'true')
             }
             return
         }
@@ -85,12 +88,12 @@ unimined.minecraft {
     defaultRemapJar = false
 
     remap(tasks.shadowJar) {
-        prodNamespace("searge")
         mixinRemap {
+            enableBaseMixin()
+            enableMixinExtra()
             disableRefmap()
         }
     }
-
 }
 
 repositories {
@@ -145,11 +148,6 @@ processResources {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    if (configurations.contain.size() > 0) {
-        into('/') {
-            from configurations.contain
-        }
-    }
     doFirst{
         manifest {
             def attribute_map = [:]
@@ -173,11 +171,6 @@ jar {
     if (propertyBool('enable_shadow')) {
         finalizedBy(tasks.named("remapShadowJar"))
     }
-}
-
-shadowJar {
-    configurations = [project.configurations.shadow]
-    archiveClassifier = "shadow"
 }
 
 compileTestJava {
@@ -223,17 +216,6 @@ def generateReferenceClass() {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-}
-
-tasks.register('copyJarToFolder', Copy) {
-    dependsOn build
-    from("$buildDir/libs/")
-    include("distanthorizons-1.0.0.jar")
-    into("I:/Hry/Prism/Cleanroom-MMC-instance-0.3.0-alpha(2)/minecraft/mods")
-}
-
-tasks.named('remapShadowJar') {
-    //finalizedBy('copyJarToFolder')
 }
 
 apply from: 'gradle/scripts/publishing.gradle'
