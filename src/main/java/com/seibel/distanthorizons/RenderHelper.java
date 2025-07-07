@@ -6,6 +6,7 @@ import com.seibel.distanthorizons.core.api.internal.ClientApi;
 import com.seibel.distanthorizons.core.util.math.Mat4f;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ActiveRenderInfo;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL32;
@@ -20,10 +21,22 @@ public class RenderHelper {
 		
 		GL32.glDisable(GL32.GL_ALPHA_TEST);
 		
-		Mat4f mcModelViewMatrix = getModelViewMatrix();
-		Mat4f mcProjectionMatrix = getProjectionMatrix();
+		Matrix4f rawModelView = new Matrix4f(ActiveRenderInfo.MODELVIEW);
+		Matrix4f rawProjection = new Matrix4f(ActiveRenderInfo.PROJECTION);
+		
+		if (rawModelView == null || rawProjection == null) {
+			if (alphaTest) GL32.glEnable(GL32.GL_ALPHA_TEST);
+			if (blend) GL32.glEnable(GL32.GL_BLEND);
+			GL32.glDepthFunc(depthFunc);
+			return;
+		}
+		
+		Mat4f mcModelViewMatrix = McObjectConverter.Convert(rawModelView);
+		Mat4f mcProjectionMatrix = McObjectConverter.Convert(rawProjection);
+		
 		float frameTime = Minecraft.getMinecraft().timer.renderPartialTicks;
 		IClientLevelWrapper levelWrapper = ClientLevelWrapper.getWrapper(Minecraft.getMinecraft().world);
+		
 		ClientApi.INSTANCE.renderLods(levelWrapper, mcModelViewMatrix, mcProjectionMatrix, frameTime);
 		
 		GL32.glDepthFunc(depthFunc);
@@ -39,36 +52,5 @@ public class RenderHelper {
 		} else {
 			GL32.glDisable(GL32.GL_BLEND);
 		}
-	}
-	
-	private static Matrix4f modelViewMatrix;
-	private static Matrix4f projectionMatrix;
-	
-	public static Matrix4f getModelViewMatrixMC() {
-		return new Matrix4f(modelViewMatrix);
-	}
-	
-	public static Matrix4f getProjectionMatrixMC() {
-		return new Matrix4f(projectionMatrix);
-	}
-	
-	public static Mat4f getModelViewMatrix() {
-		return McObjectConverter.Convert(modelViewMatrix);
-	}
-	
-	public static Mat4f getProjectionMatrix() {
-		return McObjectConverter.Convert(projectionMatrix);
-	}
-	
-	public static void setModelViewMatrix(FloatBuffer modelview) {
-		modelViewMatrix = new Matrix4f(modelview);
-	}
-	
-	public static void setProjectionMatrix(FloatBuffer projection) {
-		projectionMatrix = new Matrix4f(projection);
-	}
-	
-	public static void HelpTess() {
-		GL20.glBindBuffer(GL20.GL_ARRAY_BUFFER, 0);
 	}
 }
