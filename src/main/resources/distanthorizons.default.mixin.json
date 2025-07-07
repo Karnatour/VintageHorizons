@@ -8,6 +8,7 @@
     "plugin": "com.seibel.distanthorizons.forge.DistantHorizonsConfigPlugin",
     "client": [
         "MixinEntityRenderer",
+        "MixinNetHandlerPlayClient",
         "MixinOptionsScreen",
         "MixinRenderGlobal"
     ]
