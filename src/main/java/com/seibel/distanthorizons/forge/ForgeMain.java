@@ -31,6 +31,7 @@ import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerAboutToStartEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 
@@ -42,56 +43,58 @@ import java.util.function.Consumer;
  * If you are looking for the real start of the mod
  * check out the ClientProxy.
  */
-@Mod(modid = "distanthorizons", name = "DistantHorizons", version = "1.0.0")
+@Mod(modid = "distanthorizons", name = "DistantHorizons", version = "1.1.1")
 public class ForgeMain extends AbstractModInitializer
 {
-    @Mod.Instance
-    public static Object instance;
-
-    @Mod.EventHandler
-    public void init(FMLInitializationEvent event) {
-        if (FMLCommonHandler.instance().getEffectiveSide().isClient()) {
-            this.onInitializeClient();
-        }
-        else
-        {
-            this.onInitializeServer();
-        }
-        ForgeChunkManager.setForcedChunkLoadingCallback(instance, (List<ForgeChunkManager.Ticket> tickets, World world) -> chunkLoadedCallback());
-    }
-
-    private void chunkLoadedCallback()
-    {
-
-    }
-
-    // ServerWorldLoadEvent
-    @Mod.EventHandler
-    public void dedicatedWorldLoadEvent(FMLServerAboutToStartEvent event)
-    {
-        ServerApi.INSTANCE.serverLoadEvent(event.getServer().isDedicatedServer());
-    }
-
-    // ServerWorldUnloadEvent
-    @Mod.EventHandler
-    public void serverWorldUnloadEvent(FMLServerStoppingEvent event)
-    {
-        ServerApi.INSTANCE.serverUnloadEvent();
-    }
-
-    @Override
+	@Mod.Instance
+	public static ForgeMain instance;
+	
+	@Mod.EventHandler
+	public void preInit(FMLPreInitializationEvent event)
+	{
+		ForgeChunkManager.setForcedChunkLoadingCallback(instance, new ChunkManagerCallback());
+	}
+	
+	@Mod.EventHandler
+	public void init(FMLInitializationEvent event)
+	{
+		if (FMLCommonHandler.instance().getEffectiveSide().isClient())
+		{
+			this.onInitializeClient();
+		}
+		else
+		{
+			this.onInitializeServer();
+		}
+	}
+	
+	// ServerWorldLoadEvent
+	@Mod.EventHandler
+	public void dedicatedWorldLoadEvent(FMLServerAboutToStartEvent event)
+	{
+		ServerApi.INSTANCE.serverLoadEvent(event.getServer().isDedicatedServer());
+	}
+	
+	// ServerWorldUnloadEvent
+	@Mod.EventHandler
+	public void serverWorldUnloadEvent(FMLServerStoppingEvent event)
+	{
+		ServerApi.INSTANCE.serverUnloadEvent();
+	}
+	
+	@Override
 	protected void createInitialBindings()
 	{
 		SingletonInjector.INSTANCE.bind(IModChecker.class, ModChecker.INSTANCE);
 		SingletonInjector.INSTANCE.bind(IPluginPacketSender.class, new ForgePluginPacketSender());
 	}
-
+	
 	@Override
 	protected IEventProxy createClientProxy() { return new ForgeClientProxy(); }
-
+	
 	@Override
 	protected IEventProxy createServerProxy(boolean isDedicated) { return new ForgeServerProxy(isDedicated); }
-
+	
 	@Override
 	protected void initializeModCompat()
 	{
@@ -100,28 +103,29 @@ public class ForgeMain extends AbstractModInitializer
 				() -> (client, parent) -> GetConfigScreen.getScreen(parent));
 		*/
 	}
-
+	
 	@Override
 	protected void subscribeClientStartedEvent(Runnable eventHandler)
 	{
 		// FIXME What event is this?
 	}
-
-    @Mod.EventHandler
-    public void onServerAboutToStart(FMLServerAboutToStartEvent event) {
-        if (eventHandlerStartServer != null)
-            eventHandlerStartServer.accept(event.getServer());
-    }
-
-    Consumer<MinecraftServer> eventHandlerStartServer;
-
+	
+	@Mod.EventHandler
+	public void onServerAboutToStart(FMLServerAboutToStartEvent event)
+	{
+		if (eventHandlerStartServer != null)
+			eventHandlerStartServer.accept(event.getServer());
+	}
+	
+	Consumer<MinecraftServer> eventHandlerStartServer;
+	
 	@Override
 	protected void subscribeServerStartingEvent(Consumer<MinecraftServer> eventHandler)
 	{
-        eventHandlerStartServer = eventHandler;
+		eventHandlerStartServer = eventHandler;
 	}
-
+	
 	@Override
 	protected void runDelayedSetup() { SingletonInjector.INSTANCE.runDelayedSetup(); }
-
+	
 }

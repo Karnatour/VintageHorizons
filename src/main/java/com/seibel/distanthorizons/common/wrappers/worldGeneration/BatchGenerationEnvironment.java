@@ -56,7 +56,10 @@ import net.minecraft.world.chunk.EmptyChunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraftforge.common.ForgeChunkManager;
+import net.minecraftforge.fml.common.Loader;
 import org.apache.logging.log4j.LogManager;
+
+import static com.seibel.distanthorizons.forge.ForgeMain.instance;
 
 /*
 Total:                   3.135214124s
@@ -85,7 +88,7 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 	
 	private static final IModChecker MOD_CHECKER = SingletonInjector.INSTANCE.get(IModChecker.class);
 	
-	private final ForgeChunkManager.Ticket DH_SERVER_GEN_TICKET;
+	private ForgeChunkManager.Ticket DH_SERVER_GEN_TICKET = null;
 	
 	
 	private final IDhServerLevel serverlevel;
@@ -184,17 +187,25 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 		serverlevel.getServerLevelWrapper().getDimensionType();
 		
 		this.params = new GlobalParameters(serverlevel);
-		DH_SERVER_GEN_TICKET = ForgeChunkManager.requestTicket(ForgeMain.instance, (WorldServer)serverlevel.getServerLevelWrapper().getWrappedMcObject(), ForgeChunkManager.Type.NORMAL);
+		if (DH_SERVER_GEN_TICKET == null)
+		{
+			DH_SERVER_GEN_TICKET = ForgeChunkManager.requestTicket(instance, (WorldServer) serverlevel.getServerLevelWrapper().getWrappedMcObject(), ForgeChunkManager.Type.NORMAL);
+			DH_SERVER_GEN_TICKET.getModData().setString("owner", "distanthorizons");
+		}
 		increaseChunkLimit(DH_SERVER_GEN_TICKET, 1000);
 	}
 	
 	
-	static void increaseChunkLimit(ForgeChunkManager.Ticket ticket, int newMaxDepth) {
-		try {
+	static void increaseChunkLimit(ForgeChunkManager.Ticket ticket, int newMaxDepth)
+	{
+		try
+		{
 			Field maxDepthField = ticket.getClass().getDeclaredField("maxDepth");
 			maxDepthField.setAccessible(true);
 			maxDepthField.setInt(ticket, newMaxDepth);
-		} catch (Exception e) {
+		}
+		catch (Exception e)
+		{
 			e.printStackTrace();
 		}
 	}
@@ -261,7 +272,7 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 					{
 						this.unknownExceptionCount++;
 						this.lastExceptionTriggerTime = System.nanoTime();
-						EVENT_LOGGER.error("Batching World Generator event ["+event+"] threw an exception: "+e.getMessage(), e);
+						EVENT_LOGGER.error("Batching World Generator event [" + event + "] threw an exception: " + e.getMessage(), e);
 					}
 				}
 				
@@ -813,15 +824,17 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 	
 	private static void loadChunkIfNotExists(IChunkProvider provider, int x, int z)
 	{
-		if (!provider.isChunkGeneratedAt(x, z)) {
+		if (!provider.isChunkGeneratedAt(x, z))
+		{
 			provider.provideChunk(x, z);
 		}
 	}
 	
-	private static CompletableFuture<Chunk> forceLoadChunkAsync(WorldServer world, int x, int z) {
+	private static CompletableFuture<Chunk> forceLoadChunkAsync(WorldServer world, int x, int z)
+	{
 		return ForgeServerProxy.schedule(() ->
 		{
-			ChunkProviderServer provider = (ChunkProviderServer)world.getChunkProvider();
+			ChunkProviderServer provider = (ChunkProviderServer) world.getChunkProvider();
 			
 			for (int i = -1; i <= 1; i++)
 			{
@@ -842,26 +855,37 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 	/** @param generateUpToFeatures if false this generate the chunk up to "FULL" status */
 	private CompletableFuture<Chunk> requestChunkFromServerAsync(WorldServer level, ChunkPos pos, boolean generateUpToFeatures)
 	{
-		return CompletableFuture.supplyAsync(() ->
+		if (level.getMinecraftServer() == null)
 		{
-			ChunkPos chunk = new ChunkPos(pos.x, pos.z);
-			ForgeChunkManager.forceChunk(DH_SERVER_GEN_TICKET, chunk);
-			
-			try {
-				return forceLoadChunkAsync(level, pos.x, pos.z).get();
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			} catch (ExecutionException e) {
-				throw new RuntimeException(e);
-			}
+			return CompletableFuture.failedFuture(new IllegalStateException("Server not available"));
+		}
+		
+		level.getMinecraftServer().addScheduledTask(() -> {
+			ForgeChunkManager.forceChunk(DH_SERVER_GEN_TICKET, pos);
 		});
+		
+		return forceLoadChunkAsync(level, pos.x, pos.z);
 	}
 	/** @param chunkWasGeneratedUpToFeatures if false this assumes the chunk was generated to "FULL" status */
 	private void releaseChunkToServer(WorldServer level, ChunkPos pos, boolean chunkWasGeneratedUpToFeatures)
 	{
-		ChunkPos chunk = new ChunkPos(pos.x, pos.z);
-		
-		ForgeChunkManager.unforceChunk(DH_SERVER_GEN_TICKET, chunk);
+		if (level.getMinecraftServer() != null)
+		{
+			level.getMinecraftServer().addScheduledTask(() -> {
+				try
+				{
+					ForgeChunkManager.unforceChunk(DH_SERVER_GEN_TICKET, pos);
+				}
+				catch (Exception e)
+				{
+					EVENT_LOGGER.warn("Failed to release chunk. Error: [" + e.getMessage() + "]", e);
+				}
+			});
+		}
+		else
+		{
+			EVENT_LOGGER.warn("MinecraftServer is null, cannot unforce chunk at " + pos);
+		}
 	}
 	
 	/*
@@ -1023,6 +1047,13 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 			iter.remove();
 		}
 		
+		if (DH_SERVER_GEN_TICKET != null)
+		{
+			ForgeChunkManager.releaseTicket(DH_SERVER_GEN_TICKET);
+			DH_SERVER_GEN_TICKET = null;
+			EVENT_LOGGER.info("Released chunk loading ticket");
+		}
+		
 		// clear the chunk cache
         /*
         RegionFileStorageExternalCache regionStorage = this.regionFileStorageCacheRef.get();
@@ -1084,6 +1115,7 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 	public interface IEmptyChunkRetrievalFunc
 	{
 		Chunk getChunk(int chunkPosX, int chunkPosZ);
+		
 	}
 	
 	private static class InclusiveChunkPosStream extends Spliterators.AbstractSpliterator<ChunkPos>
@@ -1154,6 +1186,7 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 			consumer.accept(new ChunkPos(this.x, this.z));
 			return true;
 		}
+		
 	}
 	
 	public static class PerfCalculator
