@@ -98,10 +98,6 @@ public class F3Screen
 		// DH version
 		messageList.add("");
 		messageList.add(ModInfo.READABLE_NAME+": "+ModInfo.VERSION);
-		if (ModInfo.IS_DEV_BUILD)
-		{
-			messageList.add("Build: " + StringUtil.shortenString(ModJarInfo.Git_Commit, 8) + " (" + ModJarInfo.Git_Branch + ")");
-		}
 		
 		// player pos
 		if (Config.Client.Advanced.Debugging.F3Screen.showPlayerPos.get())
