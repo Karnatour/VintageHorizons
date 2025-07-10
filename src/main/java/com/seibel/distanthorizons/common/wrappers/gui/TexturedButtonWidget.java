@@ -80,7 +80,7 @@ public class TexturedButtonWidget extends GuiButton {
 			
 			//Render DH texture
 			mc.getTextureManager().bindTexture(textureResourceLocation);
-			drawModalRectWithCustomSizedTexture(this.x, this.y, 0, (20 * (i - 1)), 20, 20, 20, 40);
+			drawModalRectWithCustomSizedTexture(this.x, this.y, this.u, (hoveredVOffset * (i - 1)), this.width, this.height, this.textureWidth, this.textureHeight);
 		}
 	}
 }
