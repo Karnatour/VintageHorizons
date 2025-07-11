@@ -189,10 +189,11 @@ public class BiomeWrapper implements IBiomeWrapper
 
 
         // generate the serial string //
-
-        this.serialString = "biome:" + this.biome.getBiomeName();
-
-        return this.serialString;
+	    
+	    var regName = this.biome.getRegistryName();
+	    if (regName == null) return EMPTY_BIOME_STRING;
+	    this.serialString = "biome:" + regName;
+	    return this.serialString;
     }
 
     // TODO would it be worth while to cache these objects in a ConcurrentHashMap<string, IBiomeWrapper>?
@@ -243,7 +244,7 @@ public class BiomeWrapper implements IBiomeWrapper
                 {
                     if (biome == null)
                         continue;
-                    String id = "biome:" + biome.getBiomeName();
+                    String id = "biome:" + biome.getRegistryName();
                     if (id.equals(resourceLocationString))
                     {
                         foundBiome = biome;
