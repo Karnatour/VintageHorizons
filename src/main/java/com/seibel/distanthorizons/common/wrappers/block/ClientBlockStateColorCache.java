@@ -266,6 +266,7 @@ public class ClientBlockStateColorCache
 		if (TextureAtlasSpriteWrapper.getPixelRGBA(texture, 0, 0, 0) == 0xFFFF00FF)
 		{
 			LOGGER.error("DH: Failed to get texture for " + blockState.getBlock().getLocalizedName());
+			return 0xFF000000; // Return black if this error condition is met
 		}
 		
 		// don't render Chiseled blocks.
