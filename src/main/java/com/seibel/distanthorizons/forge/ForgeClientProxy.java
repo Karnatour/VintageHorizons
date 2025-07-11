@@ -22,6 +22,7 @@ package com.seibel.distanthorizons.forge;
 import com.seibel.distanthorizons.common.AbstractModInitializer;
 import com.seibel.distanthorizons.common.util.ProxyUtil;
 import com.seibel.distanthorizons.common.wrappers.chunk.ChunkWrapper;
+import com.seibel.distanthorizons.common.wrappers.minecraft.MinecraftRenderWrapper;
 import com.seibel.distanthorizons.common.wrappers.world.ClientLevelWrapper;
 import com.seibel.distanthorizons.core.api.internal.ClientApi;
 import com.seibel.distanthorizons.core.api.internal.SharedApi;
@@ -48,6 +49,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.GL32;
 
 import java.util.concurrent.AbstractExecutorService;
 
@@ -214,7 +216,7 @@ public class ForgeClientProxy implements AbstractModInitializer.IEventProxy
 				// should generally only need to be set once per game session
 				// allows DH to render directly to Optifine's level frame buffer,
 				// allowing better shader support
-				//MinecraftRenderWrapper.INSTANCE.finalLevelFrameBufferId = GL32.glGetInteger(GL32.GL_FRAMEBUFFER_BINDING);
+				MinecraftRenderWrapper.INSTANCE.finalLevelFrameBufferId = GL32.glGetInteger(GL32.GL_FRAMEBUFFER_BINDING);
 			}
 			catch (Exception | Error e)
 			{
