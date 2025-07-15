@@ -5,7 +5,6 @@
     "target": "@env(DEFAULT)",
     "mixins": [],
     "minVersion": "0.8.7",
-    "plugin": "com.seibel.distanthorizons.forge.DistantHorizonsConfigPlugin",
     "client": [
         "MixinEntityRenderer",
         "MixinNetHandlerPlayClient",

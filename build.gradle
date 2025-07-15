@@ -55,6 +55,8 @@ configurations {
     contain
     implementation.extendsFrom(embed)
     implementation.extendsFrom(contain)
+    modCompileOnly
+    compileOnly.extendsFrom modCompileOnly
 }
     
 unimined.minecraft {
@@ -73,7 +75,7 @@ unimined.minecraft {
         runs.auth.username = minecraft_username
         runs.all {
             var map = getSystemProperties(); 
-            map["cleanroom.dev.mixin"] = "${mod_id}.default.mixin.json"
+            map["cleanroom.dev.mixin"] = "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json"
             if (hasProperty("extra_jvm_args")) {
                 jvmArgs(propertyString('extra_jvm_args'))
             }
@@ -93,6 +95,10 @@ unimined.minecraft {
             enableMixinExtra()
             disableRefmap()
         }
+    }
+    
+    mods{
+        remap(configurations.modCompileOnly)
     }
 }
 
@@ -151,7 +157,7 @@ jar {
     doFirst{
         manifest {
             def attribute_map = [:]
-            attribute_map['MixinConfigs'] = "${mod_id}.default.mixin.json"
+            attribute_map['MixinConfigs'] = "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json"
             if (configurations.contain.size() > 0) {
                 attribute_map['ContainedDeps'] = configurations.contain.collect { it.name }.join(' ')
                 attribute_map['NonModDeps'] = true

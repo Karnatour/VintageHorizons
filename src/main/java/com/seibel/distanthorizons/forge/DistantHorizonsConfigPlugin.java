@@ -21,7 +21,10 @@ public class DistantHorizonsConfigPlugin implements IMixinConfigPlugin
 	@Override
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName)
 	{
-		return true;
+		return switch (mixinClassName.split("\\.")[5]) {
+			case "mist" -> Loader.isModLoaded("mist");
+			default -> true;	
+		};
 	}
 	
 	@Override public String getRefMapperConfig() { return null; }
