@@ -12,10 +12,10 @@ This is my first mod — expect things to be broken, unfinished, or missing.
 - **DarkShadow44** – for the 1.7.10 fork of Distant Horizons  
 
 
-## Compatibility
+## Incompatibilities
 
-- ⚠ **Not compatible with Optifine** (unless someone create PR for it) use [Celeritas](https://git.taumc.org/embeddedt/celeritas) instead
-- ⚠ **[Valkyrie](https://www.curseforge.com/minecraft/mc-mods/valkyrie)** Disable Valkyrie's fog in config
+- ❌ **Not compatible with Optifine** (unless someone create PR for it) use [Celeritas](https://git.taumc.org/embeddedt/celeritas) instead
+- ⚠ **Valkyrie's fog** Disable Valkyrie's fog in config
 
 ## Download
 Use [Release](https://github.com/Karnatour/VintageHorizons/releases) build or grab the latest dev build from [Actions](https://github.com/Karnatour/VintageHorizons/actions)
