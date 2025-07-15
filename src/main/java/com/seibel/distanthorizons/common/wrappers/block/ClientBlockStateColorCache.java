@@ -35,14 +35,21 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import java.util.List;
 import java.util.Random;
 
+import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import vazkii.quark.base.Quark;
+import vazkii.quark.base.module.ModuleLoader;
+import vazkii.quark.client.QuarkClient;
+import vazkii.quark.client.feature.GreenerGrass;
 
 import java.util.HashSet;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.seibel.distanthorizons.forge.ForgeMain.IS_QUARK_LOADED;
 
 /**
  * This stores and calculates the colors
@@ -186,6 +193,16 @@ public class ClientBlockStateColorCache
 			// getQuads() isn't thread-safe, so use lock
 			RESOLVE_LOCK.lock();
 			
+			if (this.blockState.toString().equals("immersiverailroading:block_rail") || this.blockState.toString().equals("immersiverailroading:block_rail_gag"))
+			{
+				this.needPostTinting = false;
+				this.needShade = false;
+				this.tintIndex = 0;
+				IBlockState plankState = Blocks.PLANKS.getDefaultState().withProperty(BlockPlanks.VARIANT, BlockPlanks.EnumType.DARK_OAK);
+				this.baseColor = calculateColorFromTexture(Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(plankState), ColorMode.getColorMode(plankState.getBlock()));
+				return;
+			}
+			
 			if (!this.blockState.getMaterial().isLiquid())
 			{
 				// Try to get a direction with quads for tint info
@@ -229,6 +246,8 @@ public class ClientBlockStateColorCache
 				this.tintIndex = 0;
 				this.baseColor = this.getParticleIconColor();
 			}
+			
+			resolveModdedBlocks();
 			
 			this.isColorResolved = true;
 		}
@@ -412,12 +431,43 @@ public class ClientBlockStateColorCache
 		Block block = this.blockState.getBlock();
 		if (block instanceof BlockGrass || block instanceof BlockBush)
 		{
-			tintColor = biomeWrapper.biome.getGrassColorAtPos(mcPos);
+			if (IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class))
+			{
+				tintColor = biomeWrapper.biome.getGrassColorAtPos(mcPos);
+				int r = (tintColor >> 16) & 0xFF;
+				int g = (tintColor >> 8) & 0xFF;
+				int b = tintColor & 0xFF;
+				
+				r = Math.min(255, Math.max(0, r + GreenerGrass.redShift));
+				g = Math.min(255, Math.max(0, g + GreenerGrass.greenShift));
+				b = Math.min(255, Math.max(0, b + GreenerGrass.blueShift));
+				
+				tintColor = (r << 16) | (g << 8) | b;
+			}
+			else
+			{
+				tintColor = biomeWrapper.biome.getGrassColorAtPos(mcPos);
+			}
 		}
 		else if (block instanceof BlockLeaves || block instanceof BlockOldLeaf || block instanceof BlockNewLeaf)
 		{
-			
-			tintColor = biomeWrapper.biome.getFoliageColorAtPos(mcPos);
+			if (IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class) && GreenerGrass.affectFoliage)
+			{
+				tintColor = biomeWrapper.biome.getFoliageColorAtPos(mcPos);
+				int r = (tintColor >> 16) & 0xFF;
+				int g = (tintColor >> 8) & 0xFF;
+				int b = tintColor & 0xFF;
+				
+				r = Math.min(255, Math.max(0, r + GreenerGrass.redShift));
+				g = Math.min(255, Math.max(0, g + GreenerGrass.greenShift));
+				b = Math.min(255, Math.max(0, b + GreenerGrass.blueShift));
+				
+				tintColor = (r << 16) | (g << 8) | b;
+			}
+			else
+			{
+				tintColor = biomeWrapper.biome.getFoliageColorAtPos(mcPos);
+			}
 		}
 		else if (block instanceof BlockLiquid)
 		{
@@ -449,11 +499,23 @@ public class ClientBlockStateColorCache
 		}
 	}
 	
-	
-	
-	//================//
-	// helper classes //
-	//================//
+	private void resolveModdedBlocks()
+	{
+		if (this.blockState.toString().equals("immersiverailroading:block_rail") || this.blockState.toString().equals("immersiverailroading:block_rail_gag"))
+		{
+			this.needPostTinting = false;
+			this.needShade = false;
+			this.tintIndex = 0;
+			IBlockState plankState = Blocks.PLANKS.getDefaultState().withProperty(BlockPlanks.VARIANT, BlockPlanks.EnumType.DARK_OAK);
+			this.baseColor = calculateColorFromTexture(Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(plankState), ColorMode.getColorMode(plankState.getBlock()));
+		}
+	}
+
+
+
+//================//
+// helper classes //
+//================//
 	
 	enum ColorMode
 	{

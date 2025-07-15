@@ -29,6 +29,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -46,6 +47,9 @@ import java.util.function.Consumer;
 @Mod(modid = "distanthorizons", name = "DistantHorizons", version = "1.2.0")
 public class ForgeMain extends AbstractModInitializer
 {
+	
+	public static final boolean IS_QUARK_LOADED = Loader.isModLoaded("quark");
+	
 	@Mod.Instance
 	public static ForgeMain instance;
 	
