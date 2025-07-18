@@ -20,6 +20,10 @@
 package com.seibel.distanthorizons.core.dataObjects.transformers;
 
 import com.seibel.distanthorizons.api.enums.config.EDhApiBlocksToAvoid;
+import com.seibel.distanthorizons.api.objects.DhApiResult;
+import com.seibel.distanthorizons.api.objects.data.DhApiTerrainDataPoint;
+import com.seibel.distanthorizons.core.api.external.methods.data.DhApiTerrainDataCache;
+import com.seibel.distanthorizons.core.api.external.methods.data.DhApiTerrainDataRepo;
 import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.dataObjects.fullData.FullDataPointIdMap;
 import com.seibel.distanthorizons.core.dataObjects.fullData.sources.FullDataSourceV2;
@@ -107,7 +111,7 @@ public class FullDataToRenderDataTransformer
 	 */
 	private static ColumnRenderSource transformCompleteFullDataToColumnData(IDhClientLevel level, FullDataSourceV2 fullDataSource) throws InterruptedException
 	{
- 		final long pos = fullDataSource.getPos();
+		final long pos = fullDataSource.getPos();
 		final byte dataDetail = fullDataSource.getDataDetailLevel();
 		
 		final int vertSize = Config.Client.Advanced.Graphics.Quality.verticalQuality.get().calculateMaxVerticalData(fullDataSource.getDataDetailLevel());
@@ -134,23 +138,23 @@ public class FullDataToRenderDataTransformer
 				LongArrayList dataColumn = fullDataSource.get(x, z);
 				
 				updateOrReplaceRenderDataViewColumnWithFullDataColumn(
-						level, fullDataSource.mapping, 
+						level, fullDataSource.mapping,
 						// bitshift is to account for LODs with a detail level greater than 0 so the block pos is correct
-						baseX + BitShiftUtil.pow(x,dataDetail), baseZ + BitShiftUtil.pow(z,dataDetail), 
+						baseX + BitShiftUtil.pow(x, dataDetail), baseZ + BitShiftUtil.pow(z, dataDetail),
 						columnArrayView, dataColumn);
 			}
 		}
 		
 		columnSource.fillDebugFlag(0, 0, ColumnRenderSource.SECTION_SIZE, ColumnRenderSource.SECTION_SIZE, ColumnRenderSource.DebugSourceFlag.FULL);
-			
+		
 		return columnSource;
 	}
 	
 	/** Updates the given {@link ColumnArrayView} to match the incoming Full data {@link LongArrayList} */
 	public static void updateOrReplaceRenderDataViewColumnWithFullDataColumn(
-			IDhClientLevel level, 
-			FullDataPointIdMap fullDataMapping, int blockX, int blockZ, 
-			ColumnArrayView columnArrayView, 
+			IDhClientLevel level,
+			FullDataPointIdMap fullDataMapping, int blockX, int blockZ,
+			ColumnArrayView columnArrayView,
 			LongArrayList fullDataColumn)
 	{
 		// we can't do anything if the full data is missing or empty
@@ -198,16 +202,18 @@ public class FullDataToRenderDataTransformer
 		HashSet<IBlockStateWrapper> blockStatesToIgnore = WRAPPER_FACTORY.getRendererIgnoredBlocks(level.getLevelWrapper());
 		HashSet<IBlockStateWrapper> caveBlockStatesToIgnore = WRAPPER_FACTORY.getRendererIgnoredCaveBlocks(level.getLevelWrapper());
 		
+		HashSet<String> blockResourceLocationsColorBelow = WRAPPER_FACTORY.getBlockResourceLocationsColorBelow();
+		
 		int caveCullingMaxY = Config.Client.Advanced.Graphics.Culling.caveCullingHeight.get() - level.getMinY();
-		boolean caveCullingEnabled = 
-			Config.Client.Advanced.Graphics.Culling.enableCaveCulling.get()
-			&& (
-				// dimensions with a ceiling will be all caves so we don't want cave culling
-				!level.getLevelWrapper().hasCeiling()
-				// the end has a lot of overhangs with 0 lighting above the void, which look broken with
-				// the current cave culling logic (this could probably be improved, but just skipping it works best for now)
-				&& !level.getLevelWrapper().getDimensionType().isTheEnd()
-			);
+		boolean caveCullingEnabled =
+				Config.Client.Advanced.Graphics.Culling.enableCaveCulling.get()
+						&& (
+						// dimensions with a ceiling will be all caves so we don't want cave culling
+						!level.getLevelWrapper().hasCeiling()
+								// the end has a lot of overhangs with 0 lighting above the void, which look broken with
+								// the current cave culling logic (this could probably be improved, but just skipping it works best for now)
+								&& !level.getLevelWrapper().getDimensionType().isTheEnd()
+				);
 		
 		boolean isColumnVoid = true;
 		
@@ -255,10 +261,10 @@ public class FullDataToRenderDataTransformer
 				{
 					brokenPos.add(fullDataMapping.getPos());
 					String levelId = level.getLevelWrapper().getDhIdentifier();
-					LOGGER.warn("Unable to get data point with id ["+id+"] " +
-							"(Max possible ID: ["+fullDataMapping.getMaxValidId()+"]) " +
-							"for pos ["+fullDataMapping.getPos()+"] in level ["+levelId+"]. " +
-							"Error: ["+e.getMessage()+"]. " +
+					LOGGER.warn("Unable to get data point with id [" + id + "] " +
+							"(Max possible ID: [" + fullDataMapping.getMaxValidId() + "]) " +
+							"for pos [" + fullDataMapping.getPos() + "] in level [" + levelId + "]. " +
+							"Error: [" + e.getMessage() + "]. " +
 							"Further errors for this position won't be logged.");
 				}
 				
@@ -278,18 +284,18 @@ public class FullDataToRenderDataTransformer
 			if (caveBlock)
 			{
 				if (caveCullingEnabled
-					// assume this data point is underground if it has no sky-light
-					&& skyLight == LodUtil.MIN_MC_LIGHT	
-					// ignore caves above a certain height to prevent floating islands from having walls underneath them
-					&& topY < caveCullingMaxY
-					// cave culling shouldn't happen when at the top of the world
-					&& renderDataIndex != 0 && fullDataIndex != 0
-					// cave culling can't happen when at the bottom of the world
-					&& (fullDataIndex+1) < fullColumnData.size())
+						// assume this data point is underground if it has no sky-light
+						&& skyLight == LodUtil.MIN_MC_LIGHT
+						// ignore caves above a certain height to prevent floating islands from having walls underneath them
+						&& topY < caveCullingMaxY
+						// cave culling shouldn't happen when at the top of the world
+						&& renderDataIndex != 0 && fullDataIndex != 0
+						// cave culling can't happen when at the bottom of the world
+						&& (fullDataIndex + 1) < fullColumnData.size())
 				{
 					// we need to get the next sky/block lights because
 					// the air block here will always have a light of 0/0 due to only the top of the LOD's light being saved.
-					long nextFullData = fullColumnData.getLong(fullDataIndex+1);
+					long nextFullData = fullColumnData.getLong(fullDataIndex + 1);
 					int nextSkyLight = FullDataPointUtil.getSkyLight(nextFullData);
 					
 					if (nextSkyLight == LodUtil.MIN_MC_LIGHT
@@ -323,25 +329,33 @@ public class FullDataToRenderDataTransformer
 			// non-solid block check //
 			//=======================//
 			
-			if (ignoreNonCollidingBlocks 
-				&& !block.isSolid() && !block.isLiquid() && block.getOpacity() != LodUtil.BLOCK_FULLY_OPAQUE)
-			{
-				if (colorBelowWithAvoidedBlocks)
-				{
-					int tempColor = level.computeBaseColor(mutableBlockPos, biome, block);
-					// don't transfer the color when alpha is 0
-					// this prevents issues if grass is transparent
-					if (ColorUtil.getAlpha(tempColor) != 0)
-					{
-						colorToApplyToNextBlock = ColorUtil.setAlpha(tempColor,255);
-						skylightToApplyToNextBlock = skyLight;
-						blocklightToApplyToNextBlock = blockLight;
-					}
+			
+			boolean isForcedNonColliding = blockResourceLocationsColorBelow.stream()
+					.anyMatch(blockString -> block.getSerialString().startsWith(blockString));
+			
+			boolean isNaturallyNonColliding = false;
+			
+			boolean shouldSkipBlock = isForcedNonColliding || isNaturallyNonColliding;
+			
+			int worldY = bottomY + level.getMinY();
+			mutableBlockPos.setY(worldY);
+			
+			if (shouldSkipBlock && colorBelowWithAvoidedBlocks && colorToApplyToNextBlock == -1) {
+				int tempColor = level.computeBaseColor(mutableBlockPos, biome, block);
+				if (ColorUtil.getAlpha(tempColor) != 0) {
+					colorToApplyToNextBlock = ColorUtil.setAlpha(tempColor, 255);
+					skylightToApplyToNextBlock = skyLight;
+					blocklightToApplyToNextBlock = blockLight;
+					
+				} else {
 				}
-				
-				// skip this non-colliding block
+			}
+
+			if (shouldSkipBlock) {
 				continue;
 			}
+
+			
 			
 			
 			int color;
@@ -366,7 +380,7 @@ public class FullDataToRenderDataTransformer
 			//=============================//
 			
 			// check if they share a top-bottom face and if they have same color
-			if (color == lastColor && lastBlockLight == blockLight && bottomY + blockHeight == lastBottom  && renderDataIndex > 0)
+			if (color == lastColor && lastBlockLight == blockLight && bottomY + blockHeight == lastBottom && renderDataIndex > 0)
 			{
 				//replace the previous block with new bottom
 				long columnData = renderColumnData.get(renderDataIndex - 1);

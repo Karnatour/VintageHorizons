@@ -39,7 +39,6 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.chunk.IChunkWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IBiomeWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.worldGeneration.AbstractBatchGenerationEnvironmentWrapper;
-import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.world.World;
@@ -122,11 +121,18 @@ public class WrapperFactory implements IWrapperFactory
 	public HashSet<IBlockStateWrapper> getRendererIgnoredBlocks(ILevelWrapper levelWrapper) { return BlockStateWrapper.getRendererIgnoredBlocks(levelWrapper); }
 	@Override
 	public HashSet<IBlockStateWrapper> getRendererIgnoredCaveBlocks(ILevelWrapper levelWrapper) { return BlockStateWrapper.getRendererIgnoredCaveBlocks(levelWrapper); }
-
+	@Override
+	public HashSet<String> getBlockResourceLocationsColorBelow()
+	{
+		return BlockStateWrapper.blockResourceLocationsColorBelow();
+	}
+	
 	@Override
 	public void resetRendererIgnoredCaveBlocks() { BlockStateWrapper.clearRendererIgnoredCaveBlocks(); }
 	@Override
 	public void resetRendererIgnoredBlocksSet() { BlockStateWrapper.clearRendererIgnoredBlocks(); }
+	@Override
+	public void resetBlockResourceLocationsColorBelow() { BlockStateWrapper.clearBlockResourceLocationsColorBelow(); }
 
 
 	/**

@@ -19,11 +19,16 @@
 
 package com.seibel.distanthorizons.forge;
 
+import com.seibel.distanthorizons.api.interfaces.world.IDhApiLevelWrapper;
+import com.seibel.distanthorizons.api.objects.DhApiResult;
+import com.seibel.distanthorizons.api.objects.data.DhApiTerrainDataPoint;
 import com.seibel.distanthorizons.common.AbstractModInitializer;
 import com.seibel.distanthorizons.common.util.ProxyUtil;
 import com.seibel.distanthorizons.common.wrappers.chunk.ChunkWrapper;
 import com.seibel.distanthorizons.common.wrappers.minecraft.MinecraftRenderWrapper;
 import com.seibel.distanthorizons.common.wrappers.world.ClientLevelWrapper;
+import com.seibel.distanthorizons.core.api.external.methods.data.DhApiTerrainDataCache;
+import com.seibel.distanthorizons.core.api.external.methods.data.DhApiTerrainDataRepo;
 import com.seibel.distanthorizons.core.api.internal.ClientApi;
 import com.seibel.distanthorizons.core.api.internal.SharedApi;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
@@ -140,6 +145,35 @@ public class ForgeClientProxy implements AbstractModInitializer.IEventProxy
 	@SubscribeEvent
 	public void clickBlockEvent(PlayerInteractEvent event)
 	{
+/*		DhApiTerrainDataCache dataCache = new DhApiTerrainDataCache();
+		DhApiResult<DhApiTerrainDataPoint[]> result = DhApiTerrainDataRepo.INSTANCE.getColumnDataAtBlockPos(MC.getWrappedClientLevel(), -178, 2, dataCache);
+		
+		if (result.success) {
+			DhApiTerrainDataPoint[] column = result.payload;
+			
+			System.out.println("LOD column at X = -5, Z = 10 has " + column.length + " data point(s).");
+			
+			for (int i = 0; i < column.length; i++) {
+				DhApiTerrainDataPoint point = column[i];
+				
+				String blockName = "[null block]";
+				if (point.blockStateWrapper != null && point.blockStateWrapper.getWrappedMcObject() != null) {
+					blockName = point.blockStateWrapper.getWrappedMcObject().toString();
+				}
+				
+				System.out.println(String.format(
+						"Point %d: Y[%d to %d], Block: %s, DetailLevel: %d, SkyLight: %d, BlockLight: %d",
+						i, point.bottomYBlockPos, point.topYBlockPos,
+						blockName,
+						point.detailLevel,
+						point.skyLightLevel, point.blockLightLevel
+				));
+			}
+		} else {
+			System.err.println("Failed to get column data: " + result.message);
+		}*/
+		
+		
 		if (MC.clientConnectedToDedicatedServer())
 		{
 			if (SharedApi.isChunkAtBlockPosAlreadyUpdating(event.getPos().getX(),event.getPos().getZ()))

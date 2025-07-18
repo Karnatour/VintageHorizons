@@ -1,14 +1,14 @@
 {
-    "required": true,
-    "package": "com.seibel.distanthorizons.mixin",
-    "compatibilityLevel": "JAVA_21",
-    "target": "@env(DEFAULT)",
-    "mixins": [],
-    "minVersion": "0.8.7",
-    "client": [
-        "MixinEntityRenderer",
-        "MixinNetHandlerPlayClient",
-        "MixinOptionsScreen",
-        "MixinRenderGlobal"
+  "required": true,
+  "package": "com.seibel.distanthorizons.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "target": "@env(DEFAULT)",
+  "mixins": [],
+  "minVersion": "0.8.7",
+  "client": [
+    "MixinEntityRenderer",
+    "MixinNetHandlerPlayClient",
+    "MixinOptionsScreen",
+    "MixinRenderGlobal"
     ]
 }
