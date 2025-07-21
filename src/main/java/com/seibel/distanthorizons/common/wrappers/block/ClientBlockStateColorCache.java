@@ -228,10 +228,6 @@ public class ClientBlockStateColorCache
 					this.blockColorInfo.needShade = false;
 					this.blockColorInfo.tintIndex = firstQuad.getTintIndex();
 					this.blockColorInfo.baseColor = calculateColorFromTexture(firstQuad.getSprite(), ColorMode.getColorMode(this.blockState.getBlock()));
-					if(blockState.toString().contains("botania:flower") || blockState.toString().contains("minecraft:diamond_block")){
-						LOGGER.error("XDOS " + blockState.toString() + " " + blockColorInfo.needPostTinting + " " + blockColorInfo.tintIndex + " " + blockColorInfo.baseColor + ColorMode.getColorMode(this.blockState.getBlock()) + blockState.getBlock().getRegistryName());
-						
-					}
 				}
 				else
 				{
