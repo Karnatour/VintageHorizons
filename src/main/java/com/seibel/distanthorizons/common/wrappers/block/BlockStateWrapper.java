@@ -28,6 +28,8 @@ import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.block.IBlockStateWrapper;
 
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
+import com.seibel.distanthorizons.forge.ForgeMain;
+import com.seibel.distanthorizons.modCompat.botania.Botania;
 import com.seibel.distanthorizons.modCompat.furenikusroads.FurenikusRoads;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBeacon;
@@ -47,8 +49,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.Nullable;
-
-import static com.seibel.distanthorizons.forge.ForgeMain.IS_FURENIKUSROADS_LOADED;
 
 public class BlockStateWrapper implements IBlockStateWrapper
 {
@@ -289,9 +289,13 @@ public class BlockStateWrapper implements IBlockStateWrapper
 	
 	private static void checkForModCompat(HashSet<String> blockResourceLocationColorBelow)
 	{
-		if (IS_FURENIKUSROADS_LOADED)
+		if (ForgeMain.IS_FURENIKUSROADS_LOADED)
 		{
 			blockResourceLocationColorBelow.addAll(FurenikusRoads.BLOCKS_TINT_BELOW);
+		}
+		if (ForgeMain.IS_BOTANIA_LOADED)
+		{
+			blockResourceLocationColorBelow.addAll(Botania.BLOCKS_TINT_BELOW);
 		}
 	}
 	
@@ -333,9 +337,11 @@ public class BlockStateWrapper implements IBlockStateWrapper
 		String blockStringConfig = config.get();
 		if (blockStringConfig != null && !blockStringConfig.isEmpty())
 		{
-			for (String s : blockStringConfig.split(",")) {
+			for (String s : blockStringConfig.split(","))
+			{
 				String trimmed = s.trim();
-				if (!trimmed.isEmpty()) {
+				if (!trimmed.isEmpty())
+				{
 					blockStringList.add(trimmed);
 				}
 			}

@@ -20,10 +20,6 @@
 package com.seibel.distanthorizons.core.dataObjects.transformers;
 
 import com.seibel.distanthorizons.api.enums.config.EDhApiBlocksToAvoid;
-import com.seibel.distanthorizons.api.objects.DhApiResult;
-import com.seibel.distanthorizons.api.objects.data.DhApiTerrainDataPoint;
-import com.seibel.distanthorizons.core.api.external.methods.data.DhApiTerrainDataCache;
-import com.seibel.distanthorizons.core.api.external.methods.data.DhApiTerrainDataRepo;
 import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.dataObjects.fullData.FullDataPointIdMap;
 import com.seibel.distanthorizons.core.dataObjects.fullData.sources.FullDataSourceV2;
@@ -140,7 +136,7 @@ public class FullDataToRenderDataTransformer
 				updateOrReplaceRenderDataViewColumnWithFullDataColumn(
 						level, fullDataSource.mapping,
 						// bitshift is to account for LODs with a detail level greater than 0 so the block pos is correct
-						baseX + BitShiftUtil.pow(x, dataDetail), baseZ + BitShiftUtil.pow(z, dataDetail),
+						baseX + BitShiftUtil.pow(x,dataDetail), baseZ + BitShiftUtil.pow(z,dataDetail),
 						columnArrayView, dataColumn);
 			}
 		}
@@ -201,7 +197,6 @@ public class FullDataToRenderDataTransformer
 		
 		HashSet<IBlockStateWrapper> blockStatesToIgnore = WRAPPER_FACTORY.getRendererIgnoredBlocks(level.getLevelWrapper());
 		HashSet<IBlockStateWrapper> caveBlockStatesToIgnore = WRAPPER_FACTORY.getRendererIgnoredCaveBlocks(level.getLevelWrapper());
-		
 		HashSet<String> blockResourceLocationsColorBelow = WRAPPER_FACTORY.getBlockResourceLocationsColorBelow();
 		
 		int caveCullingMaxY = Config.Client.Advanced.Graphics.Culling.caveCullingHeight.get() - level.getMinY();
@@ -261,10 +256,10 @@ public class FullDataToRenderDataTransformer
 				{
 					brokenPos.add(fullDataMapping.getPos());
 					String levelId = level.getLevelWrapper().getDhIdentifier();
-					LOGGER.warn("Unable to get data point with id [" + id + "] " +
-							"(Max possible ID: [" + fullDataMapping.getMaxValidId() + "]) " +
-							"for pos [" + fullDataMapping.getPos() + "] in level [" + levelId + "]. " +
-							"Error: [" + e.getMessage() + "]. " +
+					LOGGER.warn("Unable to get data point with id ["+id+"] " +
+							"(Max possible ID: ["+fullDataMapping.getMaxValidId()+"]) " +
+							"for pos ["+fullDataMapping.getPos()+"] in level ["+levelId+"]. " +
+							"Error: ["+e.getMessage()+"]. " +
 							"Further errors for this position won't be logged.");
 				}
 				
@@ -291,11 +286,11 @@ public class FullDataToRenderDataTransformer
 						// cave culling shouldn't happen when at the top of the world
 						&& renderDataIndex != 0 && fullDataIndex != 0
 						// cave culling can't happen when at the bottom of the world
-						&& (fullDataIndex + 1) < fullColumnData.size())
+						&& (fullDataIndex+1) < fullColumnData.size())
 				{
 					// we need to get the next sky/block lights because
 					// the air block here will always have a light of 0/0 due to only the top of the LOD's light being saved.
-					long nextFullData = fullColumnData.getLong(fullDataIndex + 1);
+					long nextFullData = fullColumnData.getLong(fullDataIndex+1);
 					int nextSkyLight = FullDataPointUtil.getSkyLight(nextFullData);
 					
 					if (nextSkyLight == LodUtil.MIN_MC_LIGHT
@@ -329,33 +324,25 @@ public class FullDataToRenderDataTransformer
 			// non-solid block check //
 			//=======================//
 			
-			
-			boolean isForcedNonColliding = blockResourceLocationsColorBelow.stream()
-					.anyMatch(blockString -> block.getSerialString().startsWith(blockString));
-			
-			boolean isNaturallyNonColliding = false;
-			
-			boolean shouldSkipBlock = isForcedNonColliding || isNaturallyNonColliding;
-			
-			int worldY = bottomY + level.getMinY();
-			mutableBlockPos.setY(worldY);
-			
-			if (shouldSkipBlock && colorBelowWithAvoidedBlocks && colorToApplyToNextBlock == -1) {
-				int tempColor = level.computeBaseColor(mutableBlockPos, biome, block);
-				if (ColorUtil.getAlpha(tempColor) != 0) {
-					colorToApplyToNextBlock = ColorUtil.setAlpha(tempColor, 255);
-					skylightToApplyToNextBlock = skyLight;
-					blocklightToApplyToNextBlock = blockLight;
-					
-				} else {
+			boolean isForcedNonColliding = blockResourceLocationsColorBelow.stream().anyMatch(blockString -> block.getSerialString().startsWith(blockString));
+			if ((ignoreNonCollidingBlocks && !block.isSolid() && !block.isLiquid() && block.getOpacity() != LodUtil.BLOCK_FULLY_OPAQUE) || (isForcedNonColliding) )
+			{
+				if (colorBelowWithAvoidedBlocks)
+				{
+					int tempColor = level.computeBaseColor(mutableBlockPos, biome, block);
+					// don't transfer the color when alpha is 0
+					// this prevents issues if grass is transparent
+					if (ColorUtil.getAlpha(tempColor) != 0)
+					{
+						colorToApplyToNextBlock = ColorUtil.setAlpha(tempColor,255);
+						skylightToApplyToNextBlock = skyLight;
+						blocklightToApplyToNextBlock = blockLight;
+					}
 				}
-			}
-
-			if (shouldSkipBlock) {
+				
+				// skip this non-colliding block
 				continue;
 			}
-
-			
 			
 			
 			int color;
@@ -380,7 +367,7 @@ public class FullDataToRenderDataTransformer
 			//=============================//
 			
 			// check if they share a top-bottom face and if they have same color
-			if (color == lastColor && lastBlockLight == blockLight && bottomY + blockHeight == lastBottom && renderDataIndex > 0)
+			if (color == lastColor && lastBlockLight == blockLight && bottomY + blockHeight == lastBottom  && renderDataIndex > 0)
 			{
 				//replace the previous block with new bottom
 				long columnData = renderColumnData.get(renderDataIndex - 1);

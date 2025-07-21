@@ -145,35 +145,6 @@ public class ForgeClientProxy implements AbstractModInitializer.IEventProxy
 	@SubscribeEvent
 	public void clickBlockEvent(PlayerInteractEvent event)
 	{
-/*		DhApiTerrainDataCache dataCache = new DhApiTerrainDataCache();
-		DhApiResult<DhApiTerrainDataPoint[]> result = DhApiTerrainDataRepo.INSTANCE.getColumnDataAtBlockPos(MC.getWrappedClientLevel(), -178, 2, dataCache);
-		
-		if (result.success) {
-			DhApiTerrainDataPoint[] column = result.payload;
-			
-			System.out.println("LOD column at X = -5, Z = 10 has " + column.length + " data point(s).");
-			
-			for (int i = 0; i < column.length; i++) {
-				DhApiTerrainDataPoint point = column[i];
-				
-				String blockName = "[null block]";
-				if (point.blockStateWrapper != null && point.blockStateWrapper.getWrappedMcObject() != null) {
-					blockName = point.blockStateWrapper.getWrappedMcObject().toString();
-				}
-				
-				System.out.println(String.format(
-						"Point %d: Y[%d to %d], Block: %s, DetailLevel: %d, SkyLight: %d, BlockLight: %d",
-						i, point.bottomYBlockPos, point.topYBlockPos,
-						blockName,
-						point.detailLevel,
-						point.skyLightLevel, point.blockLightLevel
-				));
-			}
-		} else {
-			System.err.println("Failed to get column data: " + result.message);
-		}*/
-		
-		
 		if (MC.clientConnectedToDedicatedServer())
 		{
 			if (SharedApi.isChunkAtBlockPosAlreadyUpdating(event.getPos().getX(),event.getPos().getZ()))

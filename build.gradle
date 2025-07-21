@@ -104,13 +104,6 @@ unimined.minecraft {
     }
 }
 
-repositories {
-    maven {
-        name 'CleanroomMC Maven'
-        url 'https://maven.cleanroommc.com'
-    }
-}
-
 dependencies {
     if (propertyBool('use_asset_mover')) {
         implementation "com.cleanroommc:assetmover:${propertyString('asset_mover_version')}"
