@@ -43,13 +43,14 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 public class LodDataBuilder
 {
 	private static final Logger LOGGER = DhLoggerBuilder.getLogger();
 	private static final IBlockStateWrapper AIR = SingletonInjector.INSTANCE.get(IWrapperFactory.class).getAirBlockStateWrapper();
-	
+	private static final IWrapperFactory WRAPPER_FACTORY = SingletonInjector.INSTANCE.get(IWrapperFactory.class);
 	private static boolean getTopErrorLogged = false;
 	
 	
@@ -153,11 +154,11 @@ public class LodDataBuilder
 		EDhApiWorldCompressionMode worldCompressionMode = Config.Common.LodBuilding.worldCompression.get();
 		boolean ignoreHiddenBlocks = (worldCompressionMode != EDhApiWorldCompressionMode.MERGE_SAME_BLOCKS);
 		boolean ignoreNonCollidingBlocks = (Config.Client.Advanced.Graphics.Quality.blocksToIgnore.get() == EDhApiBlocksToAvoid.NON_COLLIDING);
-		
 		try
 		{
 			IMutableBlockPosWrapper mcBlockPos = chunkWrapper.getMutableBlockPosWrapper();
 			IBlockStateWrapper previousBlockState = null;
+			HashSet<String> blockResourceLocationsColorBelow = WRAPPER_FACTORY.getBlockResourceLocationsColorBelow();
 			
 			int minBuildHeight = chunkWrapper.getMinNonEmptyHeight();
 			for (int relBlockX = 0; relBlockX < LodUtil.CHUNK_WIDTH; relBlockX++)
@@ -231,12 +232,15 @@ public class LodDataBuilder
 					
 					boolean forceSingleBlock = false;
 					boolean hasColumnLight = false;
+					
 					for (; y >= minBuildHeight; y--)
 					{
 						IBiomeWrapper newBiome = chunkWrapper.getBiome(relBlockX, y, relBlockZ);
 						IBlockStateWrapper newBlockState = previousBlockState = chunkWrapper.getBlockState(relBlockX, y, relBlockZ, mcBlockPos, previousBlockState);
 						byte newBlockLight = (byte) chunkWrapper.getDhBlockLight(relBlockX, y + 1, relBlockZ);
 						byte newSkyLight = (byte) chunkWrapper.getDhSkyLight(relBlockX, y + 1, relBlockZ);
+						
+						
 
 						// save the biome/block change
 						if (!newBiome.equals(biome) || !newBlockState.equals(blockState) || forceSingleBlock)
@@ -244,8 +248,9 @@ public class LodDataBuilder
 							forceSingleBlock = false;
 							// Check if the  previous block colors this block
 							// If so, we must make this block a single entry, aka add the next block even if it is the same
-							if (ignoreNonCollidingBlocks && !blockState.isAir()
-								&& !blockState.isSolid() && !blockState.isLiquid() && blockState.getOpacity() != LodUtil.BLOCK_FULLY_OPAQUE)
+							IBlockStateWrapper finalBlockState = blockState;
+							boolean isForcedNonColliding = blockResourceLocationsColorBelow.stream().anyMatch(blockString -> finalBlockState.getSerialString().startsWith(blockString));
+							if ((ignoreNonCollidingBlocks && !blockState.isAir() && !blockState.isSolid() && !blockState.isLiquid() && blockState.getOpacity() != LodUtil.BLOCK_FULLY_OPAQUE) || (isForcedNonColliding))
 							{
 								forceSingleBlock = true;
 							}
@@ -277,7 +282,7 @@ public class LodDataBuilder
 			
 			if (ignoreHiddenBlocks) 
 			{
-				cullHiddenBlocks(dataSource, chunkOffsetX, chunkOffsetZ);
+				cullHiddenBlocks(dataSource, chunkOffsetX, chunkOffsetZ,blockResourceLocationsColorBelow);
 			}
 		}
 		catch (DataCorruptedException e)
@@ -290,7 +295,7 @@ public class LodDataBuilder
 		return dataSource;
 	}
 	
-	private static void cullHiddenBlocks(FullDataSourceV2 dataSource, int chunkOffsetX, int chunkOffsetZ)
+	private static void cullHiddenBlocks(FullDataSourceV2 dataSource, int chunkOffsetX, int chunkOffsetZ, HashSet<String> blockResourceLocationsColorBelow)
 	{
 		for (int relZ = 1; relZ < LodUtil.CHUNK_WIDTH - 1; relZ++)
 		{
@@ -311,6 +316,14 @@ public class LodDataBuilder
 				for (; centerIndex >= 0; centerIndex--)
 				{
 					long currentPoint = centerColumn.getLong(centerIndex);
+					
+					IBlockStateWrapper finalBlockState = dataSource.mapping.getBlockStateWrapper(FullDataPointUtil.getId(currentPoint));
+					boolean isForcedNonColliding = blockResourceLocationsColorBelow.stream()
+							.anyMatch(blockString -> finalBlockState.getSerialString().startsWith(blockString));
+					
+					if (isForcedNonColliding) {
+						continue;
+					}
 					
 					// translucent data points are not eligible to be culled.
 					if (isTranslucent(dataSource, currentPoint))
@@ -364,10 +377,17 @@ public class LodDataBuilder
 						continue;
 					}
 					
-					// current point is fully surrounded. remove it.
-					centerColumn.removeLong(centerIndex);
-					// make the above data point cover the area that the current point used to occupy.
 					long above = centerColumn.getLong(centerIndex - 1);
+					
+					IBlockStateWrapper aboveBlockState = dataSource.mapping.getBlockStateWrapper(FullDataPointUtil.getId(above));
+					boolean isAboveForcedNonColliding = blockResourceLocationsColorBelow.stream()
+							.anyMatch(blockString -> aboveBlockState.getSerialString().startsWith(blockString));
+					
+					if (isAboveForcedNonColliding) {
+						continue;
+					}
+
+					centerColumn.removeLong(centerIndex);
 					above = FullDataPointUtil.setBottomY(above, FullDataPointUtil.getBottomY(currentPoint));
 					above = FullDataPointUtil.setHeight(above, FullDataPointUtil.getHeight(currentPoint) + FullDataPointUtil.getHeight(above));
 					centerColumn.set(centerIndex - 1, above);

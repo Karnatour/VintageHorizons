@@ -26,7 +26,6 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.misc.IPluginPacketSende
 import com.seibel.distanthorizons.core.wrapperInterfaces.modAccessor.IModChecker;
 import com.seibel.distanthorizons.forge.wrappers.modAccessor.ModChecker;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Loader;
@@ -36,7 +35,6 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerAboutToStartEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -44,11 +42,14 @@ import java.util.function.Consumer;
  * If you are looking for the real start of the mod
  * check out the ClientProxy.
  */
-@Mod(modid = "distanthorizons", name = "DistantHorizons", version = "1.2.0")
+@Mod(modid = "distanthorizons", name = "DistantHorizons", version = "1.2.1")
 public class ForgeMain extends AbstractModInitializer
 {
 	
 	public static final boolean IS_QUARK_LOADED = Loader.isModLoaded("quark");
+	public static final boolean IS_FURENIKUSROADS_LOADED = Loader.isModLoaded("furenikusroads");
+	public static final boolean IS_IMMERSIVERAILRAODING_LOADED = Loader.isModLoaded("immersiverailroading");
+	public static final boolean IS_BOTANIA_LOADED = Loader.isModLoaded("botania");
 	
 	@Mod.Instance
 	public static ForgeMain instance;

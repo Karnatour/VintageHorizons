@@ -24,6 +24,10 @@ import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos;
 import com.seibel.distanthorizons.core.util.ColorUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
+import com.seibel.distanthorizons.forge.ForgeMain;
+import com.seibel.distanthorizons.modCompat.furenikusroads.FurenikusRoads;
+import com.seibel.distanthorizons.modCompat.immersiverailroading.ImmersiveRailroading;
+import com.seibel.distanthorizons.modCompat.quark.Quark;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -41,15 +45,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import vazkii.quark.base.Quark;
 import vazkii.quark.base.module.ModuleLoader;
-import vazkii.quark.client.QuarkClient;
 import vazkii.quark.client.feature.GreenerGrass;
 
 import java.util.HashSet;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static com.seibel.distanthorizons.forge.ForgeMain.IS_QUARK_LOADED;
 
 /**
  * This stores and calculates the colors
@@ -90,13 +90,17 @@ public class ClientBlockStateColorCache
 	private final IBlockAccess level;
 	private final DhBlockPos blockPos;
 	
-	private boolean isColorResolved = false;
-	private int baseColor = 0;
-	private boolean needShade = true;
-	private boolean needPostTinting = false;
-	private int tintIndex = 0;
+	public static class BlockColorInfo
+	{
+		public boolean isColorResolved = false;
+		public int baseColor = 0;
+		public boolean needShade = true;
+		public boolean needPostTinting = false;
+		public int tintIndex = 0;
+		
+	}
 	
-	
+	private final BlockColorInfo blockColorInfo = new BlockColorInfo();
 	
 	//===========//
 	// constants //
@@ -183,7 +187,7 @@ public class ClientBlockStateColorCache
 	
 	private void resolveColors()
 	{
-		if (this.isColorResolved)
+		if (this.blockColorInfo.isColorResolved)
 		{
 			return;
 		}
@@ -193,13 +197,9 @@ public class ClientBlockStateColorCache
 			// getQuads() isn't thread-safe, so use lock
 			RESOLVE_LOCK.lock();
 			
-			if (this.blockState.toString().equals("immersiverailroading:block_rail") || this.blockState.toString().equals("immersiverailroading:block_rail_gag"))
+			if (resolveModdedBlocks())
 			{
-				this.needPostTinting = false;
-				this.needShade = false;
-				this.tintIndex = 0;
-				IBlockState plankState = Blocks.PLANKS.getDefaultState().withProperty(BlockPlanks.VARIANT, BlockPlanks.EnumType.DARK_OAK);
-				this.baseColor = calculateColorFromTexture(Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(plankState), ColorMode.getColorMode(plankState.getBlock()));
+				this.blockColorInfo.isColorResolved = true;
 				return;
 			}
 			
@@ -224,32 +224,29 @@ public class ClientBlockStateColorCache
 				if (quads != null && !quads.isEmpty() && quads.get(0) != null)
 				{
 					BakedQuad firstQuad = quads.get(0);
-					this.needPostTinting = firstQuad.hasTintIndex();
-					this.needShade = false;
-					this.tintIndex = firstQuad.getTintIndex();
-					
-					this.baseColor = calculateColorFromTexture(firstQuad.getSprite(), ColorMode.getColorMode(this.blockState.getBlock()));
+					this.blockColorInfo.needPostTinting = firstQuad.hasTintIndex();
+					this.blockColorInfo.needShade = false;
+					this.blockColorInfo.tintIndex = firstQuad.getTintIndex();
+					this.blockColorInfo.baseColor = calculateColorFromTexture(firstQuad.getSprite(), ColorMode.getColorMode(this.blockState.getBlock()));
 				}
 				else
 				{
-					this.needPostTinting = false;
-					this.needShade = false;
-					this.tintIndex = 0;
-					this.baseColor = this.getParticleIconColor();
+					this.blockColorInfo.needPostTinting = false;
+					this.blockColorInfo.needShade = false;
+					this.blockColorInfo.tintIndex = 0;
+					this.blockColorInfo.baseColor = this.getParticleIconColor();
 				}
 			}
 			else
 			{
 				// Liquid block fallback
-				this.needPostTinting = true;
-				this.needShade = false;
-				this.tintIndex = 0;
-				this.baseColor = this.getParticleIconColor();
+				this.blockColorInfo.needPostTinting = true;
+				this.blockColorInfo.needShade = false;
+				this.blockColorInfo.tintIndex = 0;
+				this.blockColorInfo.baseColor = this.getParticleIconColor();
 			}
 			
-			resolveModdedBlocks();
-			
-			this.isColorResolved = true;
+			this.blockColorInfo.isColorResolved = true;
 		}
 		finally
 		{
@@ -403,10 +400,15 @@ public class ClientBlockStateColorCache
 		return (bias + (scale * t)) >>> 16;
 	}
 	
-	private int getParticleIconColor()
+	public int getParticleIconColor()
 	{
 		return calculateColorFromTexture(Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(this.blockState),
 				ColorMode.getColorMode(this.blockState.getBlock()));
+	}
+	
+	public int getParticleIconColor(IBlockState blockState, ColorMode colorMode)
+	{
+		return calculateColorFromTexture(Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(blockState), colorMode);
 	}
 	
 	//===============//
@@ -415,14 +417,14 @@ public class ClientBlockStateColorCache
 	
 	public int getColor(BiomeWrapper biomeWrapper, DhBlockPos pos, ClientLevelWrapper level)
 	{
-		if (!this.needPostTinting)
+		if (!this.blockColorInfo.needPostTinting)
 		{
-			return this.baseColor;
+			return this.blockColorInfo.baseColor;
 		}
 		
 		if (BROKEN_BLOCK_STATES.contains(this.blockState))
 		{
-			return this.baseColor;
+			return this.blockColorInfo.baseColor;
 		}
 		
 		WorldClient world = (WorldClient) level.getWrappedMcObject();
@@ -431,18 +433,9 @@ public class ClientBlockStateColorCache
 		Block block = this.blockState.getBlock();
 		if (block instanceof BlockGrass || block instanceof BlockBush)
 		{
-			if (IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class))
+			if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class))
 			{
-				tintColor = biomeWrapper.biome.getGrassColorAtPos(mcPos);
-				int r = (tintColor >> 16) & 0xFF;
-				int g = (tintColor >> 8) & 0xFF;
-				int b = tintColor & 0xFF;
-				
-				r = Math.min(255, Math.max(0, r + GreenerGrass.redShift));
-				g = Math.min(255, Math.max(0, g + GreenerGrass.greenShift));
-				b = Math.min(255, Math.max(0, b + GreenerGrass.blueShift));
-				
-				tintColor = (r << 16) | (g << 8) | b;
+				tintColor = Quark.applyQuarksGreenerGrassTint(biomeWrapper.biome.getGrassColorAtPos(mcPos));
 			}
 			else
 			{
@@ -451,18 +444,9 @@ public class ClientBlockStateColorCache
 		}
 		else if (block instanceof BlockLeaves || block instanceof BlockOldLeaf || block instanceof BlockNewLeaf)
 		{
-			if (IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class) && GreenerGrass.affectFoliage)
+			if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class) && GreenerGrass.affectFoliage)
 			{
-				tintColor = biomeWrapper.biome.getFoliageColorAtPos(mcPos);
-				int r = (tintColor >> 16) & 0xFF;
-				int g = (tintColor >> 8) & 0xFF;
-				int b = tintColor & 0xFF;
-				
-				r = Math.min(255, Math.max(0, r + GreenerGrass.redShift));
-				g = Math.min(255, Math.max(0, g + GreenerGrass.greenShift));
-				b = Math.min(255, Math.max(0, b + GreenerGrass.blueShift));
-				
-				tintColor = (r << 16) | (g << 8) | b;
+				tintColor = Quark.applyQuarksGreenerGrassTint(biomeWrapper.biome.getFoliageColorAtPos(mcPos));
 			}
 			else
 			{
@@ -480,44 +464,41 @@ public class ClientBlockStateColorCache
 		{
 			try
 			{
-				tintColor = Minecraft.getMinecraft().getBlockColors().colorMultiplier(blockState, world, mcPos, tintIndex);
+				tintColor = Minecraft.getMinecraft().getBlockColors().colorMultiplier(blockState, world, mcPos, blockColorInfo.tintIndex);
 			}
 			catch (Exception e)
 			{
 				BROKEN_BLOCK_STATES.add(this.blockState);
-				return this.baseColor;
+				return this.blockColorInfo.baseColor;
 			}
 		}
 		
 		if (tintColor != -1)
 		{
-			return ColorUtil.multiplyARGBwithRGB(this.baseColor, tintColor);
+			return ColorUtil.multiplyARGBwithRGB(this.blockColorInfo.baseColor, tintColor);
 		}
 		else
 		{
-			return this.baseColor;
+			return this.blockColorInfo.baseColor;
 		}
 	}
 	
-	private void resolveModdedBlocks()
+	private boolean resolveModdedBlocks()
 	{
-		if (this.blockState.toString().equals("immersiverailroading:block_rail") || this.blockState.toString().equals("immersiverailroading:block_rail_gag"))
+		if (ForgeMain.IS_IMMERSIVERAILRAODING_LOADED)
 		{
-			this.needPostTinting = false;
-			this.needShade = false;
-			this.tintIndex = 0;
-			IBlockState plankState = Blocks.PLANKS.getDefaultState().withProperty(BlockPlanks.VARIANT, BlockPlanks.EnumType.DARK_OAK);
-			this.baseColor = calculateColorFromTexture(Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(plankState), ColorMode.getColorMode(plankState.getBlock()));
+			return ImmersiveRailroading.checkImmersiveRailroadingBlocks(this, this.blockState, this.blockColorInfo);
 		}
+		
+		if (ForgeMain.IS_FURENIKUSROADS_LOADED)
+		{
+			return FurenikusRoads.checkFurenikusRoadsBlocks(this, this.blockState, this.blockColorInfo);
+		}
+		
+		return false;
 	}
-
-
-
-//================//
-// helper classes //
-//================//
 	
-	enum ColorMode
+	public enum ColorMode
 	{
 		Default,
 		Flower,
@@ -525,7 +506,7 @@ public class ClientBlockStateColorCache
 		Chisel,
 		Glass;
 		
-		static ColorMode getColorMode(Block block)
+		public static ColorMode getColorMode(Block block)
 		{
 			if (block instanceof BlockLeaves) return Leaves;
 			if (block instanceof BlockFlower) return Flower;
@@ -535,6 +516,6 @@ public class ClientBlockStateColorCache
 		}
 	}
 	
-	
-	
 }
+
+

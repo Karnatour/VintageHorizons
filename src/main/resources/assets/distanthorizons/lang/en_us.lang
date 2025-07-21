@@ -324,6 +324,11 @@ distanthorizons.config.client.advanced.debugging.exampleConfigScreen.linkableTes
 distanthorizons.config.client.advanced.debugging.exampleConfigScreen.linkableTest.@tooltip=The value of this should be the same as in Category Test
 
 
+distanthorizons.config.client.advanced.modded=Mod support
+
+distanthorizons.config.client.advanced.modded.blockResourceLocationsColorBelow=Block resource locations that apply tint to block below
+distanthorizons.config.client.advanced.modded.blockResourceLocationsColorBelow.@tooltip=A comma separated list of block resource locations that should apply tint to block below
+
 
 
 

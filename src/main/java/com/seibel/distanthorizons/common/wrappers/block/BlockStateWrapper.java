@@ -28,18 +28,18 @@ import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.block.IBlockStateWrapper;
 
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
+import com.seibel.distanthorizons.forge.ForgeMain;
+import com.seibel.distanthorizons.modCompat.botania.Botania;
+import com.seibel.distanthorizons.modCompat.furenikusroads.FurenikusRoads;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBeacon;
 import net.minecraft.block.BlockGrass;
 import net.minecraft.block.BlockLeaves;
 import net.minecraft.block.SoundType;
-import net.minecraft.block.material.MapColor;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
@@ -71,6 +71,8 @@ public class BlockStateWrapper implements IBlockStateWrapper
 	
 	public static HashSet<IBlockStateWrapper> rendererIgnoredBlocks = null;
 	public static HashSet<IBlockStateWrapper> rendererIgnoredCaveBlocks = null;
+	
+	public static HashSet<String> blockResourceLocationsColorBelow = null;
 	
 	/** keep track of broken blocks so we don't log every time */
 	private static final HashSet<String> BROKEN_RESOURCE_LOCATIONS = new HashSet<>();
@@ -271,10 +273,35 @@ public class BlockStateWrapper implements IBlockStateWrapper
 		return rendererIgnoredCaveBlocks;
 	}
 	
+	public static HashSet<String> blockResourceLocationsColorBelow()
+	{
+		// use the cached version if possible
+		if (blockResourceLocationsColorBelow != null)
+		{
+			return blockResourceLocationsColorBelow;
+		}
+		
+		HashSet<String> blockResourceLocationColorBelow = new HashSet<>();
+		checkForModCompat(blockResourceLocationColorBelow);
+		blockResourceLocationsColorBelow = getBlockStrings(Config.Client.Advanced.Modded.blockResourceLocationsColorBelow, blockResourceLocationColorBelow);
+		return blockResourceLocationsColorBelow;
+	}
+	
+	private static void checkForModCompat(HashSet<String> blockResourceLocationColorBelow)
+	{
+		if (ForgeMain.IS_FURENIKUSROADS_LOADED)
+		{
+			blockResourceLocationColorBelow.addAll(FurenikusRoads.BLOCKS_TINT_BELOW);
+		}
+		if (ForgeMain.IS_BOTANIA_LOADED)
+		{
+			blockResourceLocationColorBelow.addAll(Botania.BLOCKS_TINT_BELOW);
+		}
+	}
+	
 	public static void clearRendererIgnoredBlocks() { rendererIgnoredBlocks = null; }
 	public static void clearRendererIgnoredCaveBlocks() { rendererIgnoredCaveBlocks = null; }
-	
-	
+	public static void clearBlockResourceLocationsColorBelow() { blockResourceLocationsColorBelow = null; }
 	
 	// lod builder helpers //
 	
@@ -295,6 +322,32 @@ public class BlockStateWrapper implements IBlockStateWrapper
 		}
 		
 		return getBlockWrappers(blockStringList, levelWrapper);
+	}
+	
+	private static HashSet<String> getBlockStrings(ConfigEntry<String> config, HashSet<String> baseResourceLocations)
+	{
+		// get the base blocks
+		HashSet<String> blockStringList = new HashSet<>();
+		if (baseResourceLocations != null)
+		{
+			blockStringList.addAll(baseResourceLocations);
+		}
+		
+		// get the config blocks
+		String blockStringConfig = config.get();
+		if (blockStringConfig != null && !blockStringConfig.isEmpty())
+		{
+			for (String s : blockStringConfig.split(","))
+			{
+				String trimmed = s.trim();
+				if (!trimmed.isEmpty())
+				{
+					blockStringList.add(trimmed);
+				}
+			}
+		}
+		
+		return blockStringList;
 	}
 	private static HashSet<IBlockStateWrapper> getBlockWrappers(HashSet<String> blockResourceLocationSet, ILevelWrapper levelWrapper)
 	{

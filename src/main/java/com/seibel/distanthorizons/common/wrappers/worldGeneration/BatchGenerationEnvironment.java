@@ -714,6 +714,7 @@ public final class BatchGenerationEnvironment extends AbstractBatchGenerationEnv
 							return requestChunkFromServerAsync(this.params.level, chunkPos, true)
 									.whenCompleteAsync((chunk, throwable) ->
 									{
+										
 										// unwrap the CompletionException if necessary
 										Throwable actualThrowable = throwable;
 										while (actualThrowable instanceof CompletionException)

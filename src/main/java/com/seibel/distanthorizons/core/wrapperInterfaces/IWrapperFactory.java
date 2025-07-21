@@ -87,11 +87,17 @@ public interface IWrapperFactory extends IDhApiWrapperFactory, IBindable
 	 * Generally this contains blocks like: air, rails, glow lichen, etc. 
 	 */
 	HashSet<IBlockStateWrapper> getRendererIgnoredCaveBlocks(ILevelWrapper levelWrapper);
+	/**
+	 * Returns the set of {@link String}'s that should apply tint to block below.
+	 * */
+	HashSet<String> getBlockResourceLocationsColorBelow();
 	
 	/** clears the cached values */
 	void resetRendererIgnoredCaveBlocks();
 	/** clears the cached values */
 	void resetRendererIgnoredBlocksSet();
+	/** clears the cached values */
+	void resetBlockResourceLocationsColorBelow();
 	
 	
 	/**

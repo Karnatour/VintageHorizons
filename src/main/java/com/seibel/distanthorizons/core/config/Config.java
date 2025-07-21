@@ -146,7 +146,7 @@ public class Config
 			public static ConfigCategory logging = new ConfigCategory.Builder().set(Common.Logging.class).setDestination("common.logging").build();
 			public static ConfigCategory debugging = new ConfigCategory.Builder().set(Debugging.class).build();
 			
-			
+			public static ConfigCategory modded = new ConfigCategory.Builder().set(Modded.class).build();
 			
 			public static class Graphics
 			{
@@ -454,6 +454,7 @@ public class Config
 									+ "Disabling this can be used to fix some crashes on Mac. \n"
 									+ "")
 							.build();
+					
 				}
 				
 				public static class Fog
@@ -558,7 +559,7 @@ public class Config
 					{
 						disableVanillaFog.addListener(
 								new ConfigChangeListener<Boolean>(disableVanillaFog,
-								(disableVanillaFog) -> enableVanillaFog.setApiValue(disableVanillaFog))
+										(disableVanillaFog) -> enableVanillaFog.setApiValue(disableVanillaFog))
 						);
 					}
 					
@@ -827,9 +828,11 @@ public class Config
 									+ "will be set to 0 (disabled).")
 							.addListener(WorldCurvatureConfigEventHandler.INSTANCE)
 							.build();
+					
 				}
 				
 			}
+			
 			
 			public static class AutoUpdater
 			{
@@ -852,10 +855,11 @@ public class Config
 						.set(EDhApiUpdateBranch.AUTO)
 						.comment(""
 								+ "If DH should use the nightly (provided by Gitlab), or stable (provided by Modrinth) build. \n"
-								+ "If ["+EDhApiUpdateBranch.AUTO+"] is selected DH will update to new stable releases if the current jar is a stable jar \n"
+								+ "If [" + EDhApiUpdateBranch.AUTO + "] is selected DH will update to new stable releases if the current jar is a stable jar \n"
 								+ "and will update to new nightly builds if the current jar is a nightly jar (IE the version number ends in '-dev')."
 								+ "")
 						.build();
+				
 			}
 			
 			public static class Multiplayer
@@ -1172,16 +1176,16 @@ public class Config
 							.set(new HashMap<String, String>())
 							.build();
 					
-					public static ConfigUIButton uiButtonTest = new ConfigUIButton(() -> 
+					public static ConfigUIButton uiButtonTest = new ConfigUIButton(() ->
 					{
 						// running on a separate thread is necessary to prevent locking
-						new Thread(() -> 
+						new Thread(() ->
 						{
 							if (!GraphicsEnvironment.isHeadless())
 							{
 								LOGGER.info("Attempting to show tinyfd message box...");
 								boolean buttonPress = TinyFileDialogs.tinyfd_messageBox("Button pressed!", "UITester dialog", "ok", "info", false);
-								LOGGER.info("dialog returned with ["+(buttonPress ? "TRUE" : "FALSE")+"]");
+								LOGGER.info("dialog returned with [" + (buttonPress ? "TRUE" : "FALSE") + "]");
 							}
 							else
 							{
@@ -1203,10 +1207,37 @@ public class Config
 						public static ConfigUiLinkedEntry linkableTest = new ConfigUiLinkedEntry(ExampleConfigScreen.linkableTest);
 						
 					}
+					
 				}
 				
 			}
+			
+			public static class Modded
+			{
+				public static ConfigEntry<String> blockResourceLocationsColorBelow = new ConfigEntry.Builder<String>()
+						.set("")
+						.comment(""
+								+ "A comma separated list of block resource locations that should apply tint to block below\n"
+								+ "")
+						.build();
+				
+				static
+				{
+					blockResourceLocationsColorBelow.addListener(new ConfigChangeListener<String>(blockResourceLocationsColorBelow,
+							(blockCsv) ->
+							{
+								IWrapperFactory wrapperFactory = SingletonInjector.INSTANCE.get(IWrapperFactory.class);
+								if (wrapperFactory != null)
+								{
+									wrapperFactory.resetBlockResourceLocationsColorBelow();
+									DhApi.Delayed.renderProxy.clearRenderDataCache();
+								}
+							}));
+				}
+			}
+			
 		}
+		
 	}
 	
 	public static class Common
@@ -1270,7 +1301,7 @@ public class Config
 					.comment(""
 							+ "How should distant generator progress be displayed? \n"
 							+ "\n"
-							+ EDhApiDistantGeneratorProgressDisplayLocation.OVERLAY + ": may be the same as "+EDhApiDistantGeneratorProgressDisplayLocation.CHAT+" for some Minecraft versions \n"
+							+ EDhApiDistantGeneratorProgressDisplayLocation.OVERLAY + ": may be the same as " + EDhApiDistantGeneratorProgressDisplayLocation.CHAT + " for some Minecraft versions \n"
 							+ EDhApiDistantGeneratorProgressDisplayLocation.CHAT + " \n"
 							+ EDhApiDistantGeneratorProgressDisplayLocation.LOG + " \n"
 							+ EDhApiDistantGeneratorProgressDisplayLocation.DISABLED + " \n"
@@ -1324,7 +1355,7 @@ public class Config
 							+ "unaffected until it needs to be re-written to the database.\n"
 							+ "\n"
 							+ EDhApiDataCompressionMode.UNCOMPRESSED + " \n"
-							+ "Should only be used for testing, is worse in every way vs ["+EDhApiDataCompressionMode.LZ4+"].\n"
+							+ "Should only be used for testing, is worse in every way vs [" + EDhApiDataCompressionMode.LZ4 + "].\n"
 							+ "Expected Compression Ratio: 1.0\n"
 							+ "Estimated average DTO read speed: 1.64 milliseconds\n"
 							+ "Estimated average DTO write speed: 12.44 milliseconds\n"
@@ -1428,6 +1459,7 @@ public class Config
 								+ "\n"
 								+ "")
 						.build();
+				
 			}
 			
 		}
@@ -1566,6 +1598,7 @@ public class Config
 						.build();
 				
 			}
+			
 		}
 		
 	}
@@ -1713,6 +1746,7 @@ public class Config
 							+ "For better performance when switching LOD detail levels, enabling [upsampleLowerDetailLodsToFillHoles] is recommended.\n"
 							+ "")
 					.build();
+			
 		}
 		
 	}
@@ -1766,7 +1800,7 @@ public class Config
 		if (installParentFolder != null && installParentFolder.getName().equals("run"))
 		{
 			if (installFolder.getName().equals("client")
-				|| installFolder.getName().equals("server"))
+					|| installFolder.getName().equals("server"))
 			{
 				return true;
 			}
