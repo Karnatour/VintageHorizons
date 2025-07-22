@@ -487,12 +487,18 @@ public class ClientBlockStateColorCache
 	{
 		if (ForgeMain.IS_IMMERSIVERAILRAODING_LOADED)
 		{
-			return ImmersiveRailroading.checkImmersiveRailroadingBlocks(this, this.blockState, this.blockColorInfo);
+			if (ImmersiveRailroading.checkImmersiveRailroadingBlocks(this, this.blockState, this.blockColorInfo))
+			{
+				return true;
+			}
 		}
 		
 		if (ForgeMain.IS_FURENIKUSROADS_LOADED)
 		{
-			return FurenikusRoads.checkFurenikusRoadsBlocks(this, this.blockState, this.blockColorInfo);
+			if (FurenikusRoads.checkFurenikusRoadsBlocks(this, this.blockState, this.blockColorInfo))
+			{
+				return true;
+			}
 		}
 		
 		return false;
