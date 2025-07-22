@@ -32,12 +32,16 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientLevelWrapper implements IClientLevelWrapper
 {
 	private static final Logger LOGGER = DhLoggerBuilder.getLogger(ClientLevelWrapper.class.getSimpleName());
-	private static final ConcurrentHashMap<WorldClient, ClientLevelWrapper> LEVEL_WRAPPER_BY_CLIENT_LEVEL = new ConcurrentHashMap<>(); // TODO can leak
+	private static final Map<WorldClient, WeakReference<ClientLevelWrapper>> LEVEL_WRAPPER_REF_BY_CLIENT_LEVEL = Collections.synchronizedMap(new WeakHashMap<>());
 	private static final IKeyedClientLevelManager KEYED_CLIENT_LEVEL_MANAGER = SingletonInjector.INSTANCE.get(IKeyedClientLevelManager.class);
 	
 	private static final Minecraft MINECRAFT = Minecraft.getMinecraft();
@@ -84,7 +88,31 @@ public class ClientLevelWrapper implements IClientLevelWrapper
 			}
 		}
 		
-		return LEVEL_WRAPPER_BY_CLIENT_LEVEL.computeIfAbsent(level, ClientLevelWrapper::new);
+		
+		WeakReference<ClientLevelWrapper> levelRef = LEVEL_WRAPPER_REF_BY_CLIENT_LEVEL.get(level);
+		if (levelRef != null)
+		{
+			ClientLevelWrapper levelWrapper = levelRef.get();
+			if (levelWrapper != null)
+			{
+				return levelWrapper;
+			}
+		}
+		
+		
+		return LEVEL_WRAPPER_REF_BY_CLIENT_LEVEL.compute(level, (newLevel, newLevelRef) ->
+		{
+			if (newLevelRef != null)
+			{
+				ClientLevelWrapper oldLevelWrapper = newLevelRef.get();
+				if (oldLevelWrapper != null)
+				{
+					return newLevelRef;
+				}
+			}
+			
+			return new WeakReference<>(new ClientLevelWrapper(newLevel));
+		}).get();
 	}
 	
 	@Nullable
@@ -261,7 +289,7 @@ public class ClientLevelWrapper implements IClientLevelWrapper
 	@Override
 	public void onUnload()
 	{
-		LEVEL_WRAPPER_BY_CLIENT_LEVEL.remove(this.level);
+		LEVEL_WRAPPER_REF_BY_CLIENT_LEVEL.remove(this.level);
 		this.parentDhLevel = null;
 	}
 	
