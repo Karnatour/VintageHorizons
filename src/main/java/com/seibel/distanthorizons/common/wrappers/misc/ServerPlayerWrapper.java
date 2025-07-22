@@ -8,6 +8,7 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.world.IServerLevelWrapp
 import com.seibel.distanthorizons.core.util.math.Vec3d;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.WorldServer;
 
 import java.net.SocketAddress;
@@ -49,13 +50,23 @@ public class ServerPlayerWrapper implements IServerPlayerWrapper
     @Override
     public IServerLevelWrapper getLevel()
     {
-        WorldServer level = null; // TODO((IMixinServerPlayer) this.getServerPlayer()).distantHorizons$getDimensionChangeDestination();
-        if (level == null)
-        {
-			level = (WorldServer)this.getServerPlayer().getServerWorld();
-        }
-
-        return ServerLevelWrapper.getWrapper(level);
+	    EntityPlayerMP player = this.getServerPlayer();
+	    
+	    int dimensionId = ((IMixinServerPlayer) player). distantHorizons$getDimensionChangeDestination();
+	    MinecraftServer server = player.getServer();
+	    WorldServer level = null;
+	    
+	    if (server != null)
+	    {
+		    level = server.getWorld(dimensionId);
+	    }
+	    
+	    if (level == null)
+	    {
+		    level = player.getServerWorld();
+	    }
+	    
+	    return ServerLevelWrapper.getWrapper(level);
     }
 
     @Override
