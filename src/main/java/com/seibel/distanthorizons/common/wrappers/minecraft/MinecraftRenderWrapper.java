@@ -75,7 +75,7 @@ public class MinecraftRenderWrapper implements IMinecraftRenderWrapper
     @Override
     public Vec3f getLookAtVector()
     {
-        net.minecraft.util.math.Vec3d look = MC.getRenderViewEntity().getLookVec();
+        net.minecraft.util.math.Vec3d look = MC.getRenderViewEntity().getLook(MC.getRenderPartialTicks());
         return new Vec3f((float)look.x, (float)look.y, (float)look.z);
     }
 
@@ -152,14 +152,12 @@ public class MinecraftRenderWrapper implements IMinecraftRenderWrapper
 
 
 
-        int width = MC.displayWidth;
-        return width;
+        return MC.displayWidth;
     }
     @Override
     public int getScreenHeight()
     {
-        int height = MC.displayWidth;
-        return height;
+        return MC.displayHeight;
     }
 
 
