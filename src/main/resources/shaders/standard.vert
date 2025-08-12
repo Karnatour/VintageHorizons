@@ -62,5 +62,5 @@ void main()
         vertexColor *= color;
     }
 
-    gl_Position = uCombinedMatrix * vec4(vertexWorldPos + vec3(mx, 1.62, mz), 1.0);
+    gl_Position = uCombinedMatrix * vec4(vertexWorldPos + vec3(mx, 0, mz), 1.0);
 }

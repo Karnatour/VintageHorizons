@@ -34,6 +34,7 @@ import com.seibel.distanthorizons.core.util.math.Vec3f;
 import com.seibel.distanthorizons.core.wrapperInterfaces.IWrapperFactory;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRenderWrapper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.MobEffects;
@@ -88,17 +89,8 @@ public class MinecraftRenderWrapper implements IMinecraftRenderWrapper
     @Override
     public Vec3d getCameraExactPosition()
     {
-        float partialTicks = Minecraft.getMinecraft().timer.renderPartialTicks;
-	    Entity entity = MC.getRenderViewEntity();
-	    if (entity == null) {
-		    return new Vec3d(0, 0, 0);
-	    }
-	    
-	    double x = entity.prevPosX + (entity.posX - entity.prevPosX) * partialTicks;
-	    double y = entity.prevPosY + (entity.posY - entity.prevPosY) * partialTicks + entity.getEyeHeight();
-	    double z = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * partialTicks;
-	    
-	    return new Vec3d(x, y, z);
+	    RenderManager rm = Minecraft.getMinecraft().getRenderManager();
+	    return new Vec3d(rm.viewerPosX, rm.viewerPosY, rm.viewerPosZ);
     }
 
     @Override
