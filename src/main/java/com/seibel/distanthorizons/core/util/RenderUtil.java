@@ -31,6 +31,7 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRen
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import com.seibel.distanthorizons.coreapi.util.MathUtil;
+import com.seibel.distanthorizons.forge.ForgeMain;
 import net.minecraftforge.fml.common.Loader;
 
 /**
@@ -92,7 +93,7 @@ public class RenderUtil
 		// 0.2 should provide a decent distance so the clip plane isn't visible
 		// but far enough the fading will rarely overlap (IE only at extreme FOV)
 		//TODO Move somewhere else
-		if (Loader.isModLoaded("lucraftcore"))
+		if (ForgeMain.IS_LUCRAFT_LOADED)
 		{
 			return getNearClipPlaneDistanceInBlocks(partialTicks, 0.04f);
 		}
