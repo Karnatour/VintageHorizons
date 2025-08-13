@@ -31,6 +31,7 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRen
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import com.seibel.distanthorizons.coreapi.util.MathUtil;
+import net.minecraftforge.fml.common.Loader;
 
 /**
  * This holds miscellaneous helper code
@@ -86,11 +87,19 @@ public class RenderUtil
 		return mcModelViewMat.copy();
 	}
 	
-	public static float getNearClipPlaneDistanceInBlocks(float partialTicks) 
-	{ 
+	public static float getNearClipPlaneDistanceInBlocks(float partialTicks)
+	{
 		// 0.2 should provide a decent distance so the clip plane isn't visible
 		// but far enough the fading will rarely overlap (IE only at extreme FOV)
-		return getNearClipPlaneDistanceInBlocks(partialTicks, 0.2f); 
+		//TODO Move somewhere else
+		if (Loader.isModLoaded("lucraftcore"))
+		{
+			return getNearClipPlaneDistanceInBlocks(partialTicks, 0.04f);
+		}
+		else
+		{
+			return getNearClipPlaneDistanceInBlocks(partialTicks, 0.2f);
+		}
 	}
 	public static float getNearClipPlaneInBlocksForFading(float partialTicks)
 	{
@@ -142,7 +151,7 @@ public class RenderUtil
 			//  If the player is moving quickly they are less likely to notice overdraw.
 			
 			nearClipPlane = vanillaBlockRenderedDistance;
-			nearClipPlane *= overdrawPreventionPercent; 
+			nearClipPlane *= overdrawPreventionPercent;
 			
 			// the near clip plane should never be closer than 1/10th of a block,
 			// otherwise Z-fighting and other issues may occur
@@ -234,8 +243,8 @@ public class RenderUtil
 			return "No Lightmap loaded";
 		}
 		
-		if (renderEventParam.dhModelViewMatrix == null 
-			|| renderEventParam.mcModelViewMatrix == null)
+		if (renderEventParam.dhModelViewMatrix == null
+				|| renderEventParam.mcModelViewMatrix == null)
 		{
 			return "No MVM or Proj Matrix Given";
 		}
