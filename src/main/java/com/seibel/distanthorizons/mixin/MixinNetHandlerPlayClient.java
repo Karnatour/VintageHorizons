@@ -21,8 +21,8 @@ public class MixinNetHandlerPlayClient
 		ForgeServerProxy.connected = true;
 	}
 	
-	@Inject(method = "cleanup", at = @At("HEAD"))
-	private void onCleanupStart(CallbackInfo ci)
+	@Inject(method = "onDisconnect", at = @At("RETURN"))
+	private void onDisconnect(ITextComponent reason, CallbackInfo ci)
 	{
 		ClientApi.INSTANCE.onClientOnlyDisconnected();
 		ForgeServerProxy.connected = false;
