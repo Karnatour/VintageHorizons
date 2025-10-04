@@ -13,7 +13,7 @@ This is my first mod — expect things to be broken, unfinished, or missing.
 
 
 ## Incompatibilities
-
+- ❌ **Not compatible with Nothirium** (waiting for fix from Nothirium side) use [Celeritas](https://git.taumc.org/embeddedt/celeritas) instead 
 - ❌ **Not compatible with Optifine** (unless someone create PR for it) use [Celeritas](https://git.taumc.org/embeddedt/celeritas) instead
 - ⚠ **Valkyrie's fog** Disable Valkyrie's fog in config
 
