@@ -72,7 +72,7 @@ unimined.minecraft {
         if (propertyBool('use_access_transformer')) {
             accessTransformer "${rootProject.projectDir}/src/main/resources/" +  propertyString('access_transformer_locations')
         }
-        loader "0.3.10-alpha"
+        loader "0.3.13-alpha"
         runs.auth.username = minecraft_username
         runs.all {
             var map = getSystemProperties(); 

@@ -28,6 +28,7 @@ import com.seibel.distanthorizons.forge.ForgeMain;
 import com.seibel.distanthorizons.modCompat.furenikusroads.FurenikusRoads;
 import com.seibel.distanthorizons.modCompat.immersiverailroading.ImmersiveRailroading;
 import com.seibel.distanthorizons.modCompat.quark.Quark;
+import com.seibel.distanthorizons.modCompat.thermaldynamics.ThermalExpansion;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -39,7 +40,6 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import java.util.List;
 import java.util.Random;
 
-import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
@@ -279,6 +279,8 @@ public class ClientBlockStateColorCache
 		double blue = 0;
 		int tempColor;
 		
+		
+		
 		if (TextureAtlasSpriteWrapper.getPixelRGBA(texture, 0, 0, 0) == 0xFFFF00FF)
 		{
 			LOGGER.error("DH: Failed to get texture for " + blockState.getBlock().getLocalizedName());
@@ -406,6 +408,17 @@ public class ClientBlockStateColorCache
 				ColorMode.getColorMode(this.blockState.getBlock()));
 	}
 	
+	public int getParticleIconColor(ColorMode colorMode)
+	{
+		return calculateColorFromTexture(Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(this.blockState),
+				colorMode);
+	}
+	
+	public int getParticleIconColor(TextureAtlasSprite texture, ColorMode colorMode)
+	{
+		return calculateColorFromTexture(texture, colorMode);
+	}
+	
 	public int getParticleIconColor(IBlockState blockState, ColorMode colorMode)
 	{
 		return calculateColorFromTexture(Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(blockState), colorMode);
@@ -485,24 +498,25 @@ public class ClientBlockStateColorCache
 	
 	private boolean resolveModdedBlocks()
 	{
-		if (ForgeMain.IS_IMMERSIVERAILRAODING_LOADED)
+		if (ForgeMain.IS_IMMERSIVERAILRAODING_LOADED && ImmersiveRailroading.checkImmersiveRailroadingBlocks(this, this.blockState, this.blockColorInfo))
 		{
-			if (ImmersiveRailroading.checkImmersiveRailroadingBlocks(this, this.blockState, this.blockColorInfo))
-			{
-				return true;
-			}
+			return true;
 		}
 		
-		if (ForgeMain.IS_FURENIKUSROADS_LOADED)
+		if (ForgeMain.IS_FURENIKUSROADS_LOADED && FurenikusRoads.checkFurenikusRoadsBlocks(this, this.blockState, this.blockColorInfo))
 		{
-			if (FurenikusRoads.checkFurenikusRoadsBlocks(this, this.blockState, this.blockColorInfo))
-			{
-				return true;
-			}
+			return true;
 		}
+		
+		if (ForgeMain.IS_DYNAMICS_LOADED && ThermalExpansion.checkThermalExpansionBlocks(this, this.blockState, this.blockColorInfo))
+		{
+			return true;
+		}
+		
 		
 		return false;
 	}
+	
 	
 	public enum ColorMode
 	{
@@ -516,7 +530,7 @@ public class ClientBlockStateColorCache
 		{
 			if (block instanceof BlockLeaves) return Leaves;
 			if (block instanceof BlockFlower) return Flower;
-			if (block.toString().contains("glass")) return Glass;
+			if (block.toString().toLowerCase().contains("glass")) return Glass;
 			if (block.toString().equals("Block{chiselsandbits:chiseled}")) return Chisel;
 			return Default;
 		}

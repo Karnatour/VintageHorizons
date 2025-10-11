@@ -51,6 +51,7 @@ public class ForgeMain extends AbstractModInitializer
 	public static final boolean IS_IMMERSIVERAILRAODING_LOADED = Loader.isModLoaded("immersiverailroading");
 	public static final boolean IS_BOTANIA_LOADED = Loader.isModLoaded("botania");
 	public static final boolean IS_LUCRAFT_LOADED = Loader.isModLoaded("lucraftcore");
+	public static final boolean IS_DYNAMICS_LOADED = Loader.isModLoaded("thermaldynamics");
 	
 	@Mod.Instance
 	public static ForgeMain instance;
