@@ -22,20 +22,18 @@ package com.seibel.distanthorizons.core.config.gui;
 import com.seibel.distanthorizons.core.jar.EPlatform;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.jawt.JAWT;
-import org.lwjgl.system.macosx.ObjCRuntime;
+import org.lwjgl.system.macosx.*;
 
 import java.awt.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.lang.reflect.*;
+import java.util.regex.*;
 
-import static org.lwjgl.glfw.GLFWNativeCocoa.glfwGetCocoaWindow;
-import static org.lwjgl.glfw.GLFWNativeWin32.glfwGetWin32Window;
-import static org.lwjgl.glfw.GLFWNativeX11.glfwGetX11Window;
-import static org.lwjgl.system.JNI.invokePPP;
+import static org.lwjgl.glfw.GLFWNativeCocoa.*;
+import static org.lwjgl.glfw.GLFWNativeWin32.*;
+import static org.lwjgl.glfw.GLFWNativeX11.*;
+import static org.lwjgl.system.JNI.*;
 import static org.lwjgl.system.jawt.JAWTFunctions.*;
-import static org.lwjgl.system.macosx.ObjCRuntime.sel_getUid;
+import static org.lwjgl.system.macosx.ObjCRuntime.*;
 
 // Some of the code is from https://github.com/LWJGL/lwjgl3/blob/master/modules/samples/src/test/java/org/lwjgl/demo/system/jawt/EmbeddedFrameUtil.java
 // which is licensed under https://www.lwjgl.org/license

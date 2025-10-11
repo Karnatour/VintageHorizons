@@ -29,6 +29,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class QuadElementBuffer extends GLElementBuffer
 {

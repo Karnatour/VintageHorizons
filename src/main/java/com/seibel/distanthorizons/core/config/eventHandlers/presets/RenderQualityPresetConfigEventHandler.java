@@ -32,9 +32,7 @@ import com.seibel.distanthorizons.coreapi.interfaces.config.IConfigEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class RenderQualityPresetConfigEventHandler extends AbstractPresetConfigEventHandler<EDhApiQualityPreset>
@@ -107,6 +105,24 @@ public class RenderQualityPresetConfigEventHandler extends AbstractPresetConfigE
 				this.put(EDhApiQualityPreset.HIGH, true);
 				this.put(EDhApiQualityPreset.EXTREME, true);
 			}});
+	private final ConfigEntryWithPresetOptions<EDhApiQualityPreset, Boolean> caveCulling = new ConfigEntryWithPresetOptions<>(Config.Client.Advanced.Graphics.Culling.enableCaveCulling,
+			new HashMap<EDhApiQualityPreset, Boolean>()
+			{{
+				this.put(EDhApiQualityPreset.MINIMUM, true);
+				this.put(EDhApiQualityPreset.LOW, true);
+				this.put(EDhApiQualityPreset.MEDIUM, true);
+				this.put(EDhApiQualityPreset.HIGH, false);
+				this.put(EDhApiQualityPreset.EXTREME, false);
+			}});
+	private final ConfigEntryWithPresetOptions<EDhApiQualityPreset, Integer> biomeBlending = new ConfigEntryWithPresetOptions<>(Config.Client.Advanced.Graphics.Quality.lodBiomeBlending,
+			new HashMap<EDhApiQualityPreset, Integer>()
+			{{
+				this.put(EDhApiQualityPreset.MINIMUM, 0);
+				this.put(EDhApiQualityPreset.LOW, 1);
+				this.put(EDhApiQualityPreset.MEDIUM, 3);
+				this.put(EDhApiQualityPreset.HIGH, 3);
+				this.put(EDhApiQualityPreset.EXTREME, 3);
+			}});
 		
 	
 	
@@ -125,6 +141,8 @@ public class RenderQualityPresetConfigEventHandler extends AbstractPresetConfigE
 		this.configList.add(this.ssaoEnabled);
 		this.configList.add(this.vanillaFade);
 		this.configList.add(this.dhDither);
+		this.configList.add(this.caveCulling);
+		this.configList.add(this.biomeBlending);
 		
 		
 		for (ConfigEntryWithPresetOptions<EDhApiQualityPreset, ?> config : this.configList)

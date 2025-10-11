@@ -20,9 +20,9 @@
 package com.seibel.distanthorizons.core.world;
 
 import com.seibel.distanthorizons.core.level.DhClientServerLevel;
-import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.util.ThreadUtil;
 import com.seibel.distanthorizons.core.util.objects.EventLoop;
+import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IServerLevelWrapper;
@@ -37,7 +37,7 @@ public class DhClientServerWorld extends AbstractDhServerWorld<DhClientServerLev
 {
 	private final Set<DhClientServerLevel> dhLevels = Collections.synchronizedSet(new HashSet<>());
 	
-	public ExecutorService dhTickerThread = ThreadUtil.makeSingleThreadPool("Client Server World Ticker Thread", 2);
+	public ExecutorService dhTickerThread = ThreadUtil.makeSingleThreadPool("Client Server World Ticker", 2);
 	public EventLoop eventLoop = new EventLoop(this.dhTickerThread, this::_clientTick); //TODO: Rate-limit the loop
 	
 	

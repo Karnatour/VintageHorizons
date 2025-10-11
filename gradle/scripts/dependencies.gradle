@@ -38,6 +38,9 @@ dependencies {
     shadow('com.electronwill.night-config:toml:3.6.6')
     implementation('com.electronwill.night-config:json:3.6.6')
     shadow('com.electronwill.night-config:json:3.6.6')
+
+    implementation("com.github.luben:zstd-jni:1.5.7-4")
+    shadow("com.github.luben:zstd-jni:1.5.7-4")
     
     modCompileOnly('curse.maven:quark-243121:2924091')
     modCompileOnly('curse.maven:mistyworld-271013:3155036')

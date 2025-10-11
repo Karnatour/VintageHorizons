@@ -19,11 +19,11 @@
 
 package com.seibel.distanthorizons.core.render.renderer;
 
-import com.seibel.distanthorizons.api.enums.rendering.EDhApiFogColorMode;
 import com.seibel.distanthorizons.api.interfaces.override.rendering.IDhApiFramebuffer;
 import com.seibel.distanthorizons.api.interfaces.override.rendering.IDhApiShaderProgram;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.*;
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiRenderParam;
+import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiTextureCreatedParam;
 import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.dataObjects.render.bufferBuilding.ColumnRenderBuffer;
 import com.seibel.distanthorizons.core.dependencyInjection.ModAccessorInjector;
@@ -38,20 +38,21 @@ import com.seibel.distanthorizons.core.render.glObject.buffer.GLVertexBuffer;
 import com.seibel.distanthorizons.core.render.glObject.buffer.QuadElementBuffer;
 import com.seibel.distanthorizons.core.render.glObject.texture.*;
 import com.seibel.distanthorizons.core.render.renderer.generic.GenericObjectRenderer;
-import com.seibel.distanthorizons.core.render.renderer.shaders.DhApplyShader;
+import com.seibel.distanthorizons.core.render.renderer.shaders.*;
 import com.seibel.distanthorizons.core.util.math.Mat4f;
-import com.seibel.distanthorizons.core.util.math.Vec3d;
-import com.seibel.distanthorizons.core.util.math.Vec3f;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftGLWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRenderWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IProfilerWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.misc.ILightMapWrapper;
+import com.seibel.distanthorizons.api.enums.rendering.EDhApiFogColorMode;
 import com.seibel.distanthorizons.core.wrapperInterfaces.modAccessor.AbstractOptifineAccessor;
 import com.seibel.distanthorizons.core.wrapperInterfaces.modAccessor.IIrisAccessor;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import com.seibel.distanthorizons.coreapi.DependencyInjection.ApiEventInjector;
 import com.seibel.distanthorizons.coreapi.DependencyInjection.OverrideInjector;
+import com.seibel.distanthorizons.core.util.math.Vec3d;
+import com.seibel.distanthorizons.core.util.math.Vec3f;
 import org.apache.logging.log4j.LogManager;
 import org.lwjgl.opengl.GL32;
 
@@ -105,7 +106,7 @@ public class LodRenderer
 	// The shader program
 	private IDhApiShaderProgram lodRenderProgram = null;
 	public QuadElementBuffer quadIBO = null;
-	public boolean isSetupComplete = false;
+	private boolean isSetupComplete = false;
 	
 	// frameBuffer and texture ID's for this renderer
 	private IDhApiFramebuffer framebuffer;
@@ -251,6 +252,11 @@ public class LodRenderer
 			
 			ApiEventInjector.INSTANCE.fireAllEvents(DhApiBeforeRenderSetupEvent.class, renderEventParam);
 			this.setupGLStateAndRenderObjects(profiler, renderEventParam, renderingFirstPass);
+			if (!this.isSetupComplete)
+			{
+				// this shouldn't normally happen, but just in case
+				return;
+			}
 			
 			lightmap.bind();
 			this.quadIBO.bind();
@@ -557,33 +563,23 @@ public class LodRenderer
 		activeFrameBuffer.bind();
 		
 		
-		boolean clearTextures = !ApiEventInjector.INSTANCE.fireAllEvents(DhApiBeforeTextureClearEvent.class, renderEventParam);
-		if (clearTextures)
-		{
-			if (this.usingMcFrameBuffer && framebufferOverride == null)
-			{
-				// Due to using MC/Optifine's framebuffer we need to re-bind the depth texture,
-				// otherwise we'll be writing to MC/Optifine's depth texture which causes rendering issues
-				activeFrameBuffer.addDepthAttachment(this.depthTexture.getTextureId(), EDhDepthBufferFormat.DEPTH32F.isCombinedStencil());
-				
-				
-				// don't clear the color texture, that removes the sky 
-				GL32.glClear(GL32.GL_DEPTH_BUFFER_BIT);
-			}
-			else if (firstPass)
-			{
-				GL32.glClear(GL32.GL_COLOR_BUFFER_BIT | GL32.GL_DEPTH_BUFFER_BIT);
-			}
-		}
-		
 		// by default draw everything as triangles
 		GL32.glPolygonMode(GL32.GL_FRONT_AND_BACK, GL32.GL_FILL);
 		GLMC.enableFaceCulling();
+		
+		GLMC.glBlendFunc(GL32.GL_SRC_ALPHA, GL32.GL_ONE_MINUS_SRC_ALPHA);
+		GLMC.glBlendFuncSeparate(GL32.GL_SRC_ALPHA, GL32.GL_ONE_MINUS_SRC_ALPHA, GL32.GL_ONE, GL32.GL_ZERO);
+		
+		GL32.glDisable(GL32.GL_SCISSOR_TEST);
 		
 		// Enable depth test and depth mask
 		GLMC.enableDepthTest();
 		GLMC.glDepthFunc(GL32.GL_LESS);
 		GLMC.enableDepthMask();
+		
+		// This is required for MC versions 1.21.5+
+		// due to MC updating the lightmap by changing the viewport size
+		GL32.glViewport(0, 0, this.cachedWidth, this.cachedHeight);
 		
 		/*---------Bind required objects--------*/
 		// Setup LodRenderProgram and the LightmapTexture if it has not yet been done
@@ -605,6 +601,33 @@ public class LodRenderer
 		}
 		
 		this.lodRenderProgram.fillUniformData(renderEventParam);
+		
+		
+		// needs to be fired after all the textures have been created/bound
+		boolean clearTextures = !ApiEventInjector.INSTANCE.fireAllEvents(DhApiBeforeTextureClearEvent.class, renderEventParam);
+		if (clearTextures)
+		{
+			GL32.glClearDepth(1.0);
+			
+			float[] clearColorValues = new float[4];
+			GL32.glGetFloatv(GL32.GL_COLOR_CLEAR_VALUE, clearColorValues);
+			GL32.glClearColor(clearColorValues[0], clearColorValues[1], clearColorValues[2], 1.0f);
+			
+			if (this.usingMcFrameBuffer && framebufferOverride == null)
+			{
+				// Due to using MC/Optifine's framebuffer we need to re-bind the depth texture,
+				// otherwise we'll be writing to MC/Optifine's depth texture which causes rendering issues
+				activeFrameBuffer.addDepthAttachment(this.depthTexture.getTextureId(), EDhDepthBufferFormat.DEPTH32F.isCombinedStencil());
+				
+				
+				// don't clear the color texture, that removes the sky 
+				GL32.glClear(GL32.GL_DEPTH_BUFFER_BIT);
+			}
+			else if (firstPass)
+			{
+				GL32.glClear(GL32.GL_COLOR_BUFFER_BIT | GL32.GL_DEPTH_BUFFER_BIT);
+			}
+		}
 	}
 	
 	/** Setup all render objects - MUST be called on the render thread */
@@ -615,7 +638,7 @@ public class LodRenderer
 			EVENT_LOGGER.warn("Renderer setup called but it has already completed setup!");
 			return;
 		}
-		if (GLProxy.getInstance() == null)
+		if (!GLProxy.hasInstance())
 		{
 			// shouldn't normally happen, but just in case
 			EVENT_LOGGER.warn("Renderer setup called but GLProxy has not yet been setup!");
@@ -628,7 +651,6 @@ public class LodRenderer
 			
 			
 			EVENT_LOGGER.info("Setting up renderer");
-			this.isSetupComplete = true;
 			this.lodRenderProgram = new DhTerrainShaderProgram();
 			
 			this.quadIBO = new QuadElementBuffer();
@@ -656,10 +678,12 @@ public class LodRenderer
 			if(this.framebuffer.getStatus() != GL32.GL_FRAMEBUFFER_COMPLETE)
 			{
 				// This generally means something wasn't bound, IE missing either the color or depth texture
-				SPAM_LOGGER.warn("FrameBuffer ["+this.framebuffer.getId()+"] isn't complete.");
+				EVENT_LOGGER.warn("FrameBuffer ["+this.framebuffer.getId()+"] isn't complete.");
+				return;
 			}
 			
 			
+			this.isSetupComplete = true;
 			EVENT_LOGGER.info("Renderer setup complete");
 		}
 		finally
@@ -675,12 +699,15 @@ public class LodRenderer
 		this.cachedWidth = MC_RENDER.getTargetFrameBufferViewportWidth();
 		this.cachedHeight = MC_RENDER.getTargetFrameBufferViewportHeight();
 		
+		DhApiTextureCreatedParam textureCreatedParam = new DhApiTextureCreatedParam(
+				oldWidth, oldHeight,
+				this.cachedWidth, this.cachedHeight
+		);
 		
-		ApiEventInjector.INSTANCE.fireAllEvents(DhApiColorDepthTextureCreatedEvent.class, 
-				new DhApiColorDepthTextureCreatedEvent.EventParam(
-						oldWidth, oldHeight,
-						this.cachedWidth, this.cachedHeight
-				));
+		
+		
+		ApiEventInjector.INSTANCE.fireAllEvents(DhApiColorDepthTextureCreatedEvent.class, new DhApiColorDepthTextureCreatedEvent.EventParam(textureCreatedParam));
+		ApiEventInjector.INSTANCE.fireAllEvents(DhApiBeforeColorDepthTextureCreatedEvent.class, textureCreatedParam);
 				
 		
 		// also update the override if present
@@ -712,26 +739,10 @@ public class LodRenderer
 		{
 			this.nullableColorTexture = null;
 		}
-	}
-	
-	
-	
-	private Color getFogColor(float partialTicks)
-	{
-		Color fogColor;
 		
-		if (Config.Client.Advanced.Graphics.Fog.colorMode.get() == EDhApiFogColorMode.USE_SKY_COLOR)
-		{
-			fogColor = MC_RENDER.getSkyColor();
-		}
-		else
-		{
-			fogColor = MC_RENDER.getFogColor(partialTicks);
-		}
 		
-		return fogColor;
+		ApiEventInjector.INSTANCE.fireAllEvents(DhApiAfterColorDepthTextureCreatedEvent.class, textureCreatedParam);
 	}
-	private Color getSpecialFogColor(float partialTicks) { return MC_RENDER.getSpecialFogColor(partialTicks); }
 	
 	
 	
@@ -748,7 +759,10 @@ public class LodRenderer
 	public static int getActiveColorTextureId() { return activeColorTextureId; }
 	
 	private void setActiveDepthTextureId(int depthTextureId) { activeDepthTextureId = depthTextureId; }
-	/** Returns -1 if no texture has been bound yet */
+	/**
+	 * FIXME it's possible for this to return an invalid texture ID if the renderer is being re-built at the same time 
+	 * Returns -1 if no texture has been bound yet 
+	 */
 	public static int getActiveDepthTextureId() { return activeDepthTextureId; }
 	
 	
@@ -763,7 +777,7 @@ public class LodRenderer
 	 */
 	private void cleanup()
 	{
-		if (GLProxy.getInstance() == null)
+		if (!GLProxy.hasInstance())
 		{
 			// shouldn't normally happen, but just in case
 			EVENT_LOGGER.warn("Renderer Cleanup called but the GLProxy has never been initialized!");
@@ -795,6 +809,9 @@ public class LodRenderer
 					this.nullableColorTexture.destroy();
 				if (this.depthTexture != null)
 					this.depthTexture.destroy();
+				
+				this.setActiveDepthTextureId(-1);
+				this.setActiveColorTextureId(-1);
 				
 				EVENT_LOGGER.info("Renderer Cleanup Complete");
 			});

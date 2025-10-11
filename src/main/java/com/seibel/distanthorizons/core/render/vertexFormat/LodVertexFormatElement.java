@@ -34,14 +34,14 @@ import org.lwjgl.opengl.GL32;
  */
 public class LodVertexFormatElement
 {
-	private final DataType dataType;
+	private final LodVertexFormatElement.DataType dataType;
 	/** James isn't sure what index is for */
 	private final int index;
 	private final int count;
 	private final int byteSize;
 	private final boolean isPadding;
 	
-	public LodVertexFormatElement(int newIndex, DataType newType, int newCount, boolean isPadding)
+	public LodVertexFormatElement(int newIndex, LodVertexFormatElement.DataType newType, int newCount, boolean isPadding)
 	{
 		this.dataType = newType;
 		this.index = newIndex;
@@ -55,7 +55,7 @@ public class LodVertexFormatElement
 		return isPadding;
 	}
 	
-	public final DataType getType()
+	public final LodVertexFormatElement.DataType getType()
 	{
 		return this.dataType;
 	}

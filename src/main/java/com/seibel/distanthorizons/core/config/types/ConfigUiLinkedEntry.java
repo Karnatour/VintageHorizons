@@ -27,7 +27,6 @@ import com.seibel.distanthorizons.core.config.types.enums.EConfigEntryAppearance
  *
  * @author coolGi
  */
-@Deprecated // FIXME doesn't work with localization
 public class ConfigUiLinkedEntry extends AbstractConfigType<AbstractConfigType<?, ?>, ConfigUiLinkedEntry>
 {
 	public ConfigUiLinkedEntry(AbstractConfigType<?, ?> value)

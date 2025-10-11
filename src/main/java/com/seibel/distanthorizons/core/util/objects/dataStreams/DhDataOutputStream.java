@@ -19,6 +19,7 @@
 
 package com.seibel.distanthorizons.core.util.objects.dataStreams;
 
+import com.github.luben.zstd.ZstdOutputStream;
 import com.seibel.distanthorizons.api.enums.config.EDhApiDataCompressionMode;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FrameOutputStream;
@@ -27,10 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.tukaani.xz.*;
 
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 
 /**
  * See {@link DhDataInputStream} for more information about these custom streams.
@@ -56,6 +54,9 @@ public class DhDataOutputStream extends DataOutputStream
 			{
 				case UNCOMPRESSED:
 					return stream;
+				
+				case Z_STD:
+					return new ZstdOutputStream(stream, 3, true, true);
 				case LZ4:
 					return new LZ4FrameOutputStream(stream, 
 							LZ4FrameOutputStream.BLOCKSIZE.SIZE_64KB, -1L,
@@ -72,7 +73,7 @@ public class DhDataOutputStream extends DataOutputStream
 					arrayCache.reset();
 					// Note: if the LZMA2Options are changed the array cache may need to be re-tested.
 					// the array cache was specifically tested and tuned for LZMA preset 3/4
-					return new XZOutputStream(stream, new LZMA2Options(3), 
+					return new XZOutputStream(stream, new LZMA2Options(3),
 							XZ.CHECK_CRC64, arrayCache);
 				
 				default:
@@ -87,7 +88,11 @@ public class DhDataOutputStream extends DataOutputStream
 			}
 	}
 	
-	@Override
-	public void close() throws IOException { /* Do nothing. */ }
+	
+	// TODO at one point closing the streams caused errors, is that due to a bug with LZMA streams or some bug in DH's code that was since fixed?
+	//  if streams aren't closed that cause cause higher-than-expected native memory use if the GC decides
+	//  it doesn't want to clear the stream objects
+	//@Override
+	//public void close() throws IOException { /* Do nothing. */ }
 	
 }

@@ -22,10 +22,10 @@ package com.seibel.distanthorizons.core.pos.blockPos;
 import com.seibel.distanthorizons.core.enums.EDhDirection;
 import com.seibel.distanthorizons.core.network.INetworkObject;
 import com.seibel.distanthorizons.core.util.LodUtil;
+
 import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
 
 /**

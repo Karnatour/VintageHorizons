@@ -19,18 +19,18 @@
 
 package com.seibel.distanthorizons.core.wrapperInterfaces.minecraft;
 
-import com.seibel.distanthorizons.core.enums.EDhDirection;
-import com.seibel.distanthorizons.core.pos.DhChunkPos;
-import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos;
-import com.seibel.distanthorizons.core.render.glObject.GLProxy;
-import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
-import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
-import com.seibel.distanthorizons.coreapi.ModInfo;
-import com.seibel.distanthorizons.coreapi.interfaces.dependencyInjection.IBindable;
-import org.apache.logging.log4j.Level;
-
 import java.util.ArrayList;
 import java.util.UUID;
+
+import com.seibel.distanthorizons.core.enums.EDhDirection;
+import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos;
+import com.seibel.distanthorizons.core.pos.DhChunkPos;
+import com.seibel.distanthorizons.core.render.glObject.GLProxy;
+import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
+import com.seibel.distanthorizons.coreapi.ModInfo;
+import com.seibel.distanthorizons.coreapi.interfaces.dependencyInjection.IBindable;
+import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
+import org.apache.logging.log4j.Level;
 
 /**
  * Contains everything related to the Minecraft object.
@@ -79,8 +79,12 @@ public interface IMinecraftClientWrapper extends IBindable
 	
 	String getUsername();
 	
+	// TODO returning null would be easier to understand but might make things harder to parse in some cases
+	/** @return (0,0,0) if no player is loaded */
 	DhBlockPos getPlayerBlockPos();
 	
+	// TODO returning null would be easier to understand but might make things harder to parse in some cases
+	/** @return (0,0) if no player is loaded */
 	DhChunkPos getPlayerChunkPos();
 	
 	/**

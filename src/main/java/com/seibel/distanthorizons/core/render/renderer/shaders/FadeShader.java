@@ -19,10 +19,13 @@
 
 package com.seibel.distanthorizons.core.render.renderer.shaders;
 
+import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
+import com.seibel.distanthorizons.core.render.glObject.GLState;
 import com.seibel.distanthorizons.core.render.glObject.shader.ShaderProgram;
 import com.seibel.distanthorizons.core.render.renderer.LodRenderer;
 import com.seibel.distanthorizons.core.render.renderer.ScreenQuad;
+import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.util.RenderUtil;
 import com.seibel.distanthorizons.core.util.math.Mat4f;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
@@ -34,7 +37,6 @@ public class FadeShader extends AbstractShaderRenderer
 {
 	public static FadeShader INSTANCE = new FadeShader();
 	
-	private static final IMinecraftClientWrapper MC_CLIENT = SingletonInjector.INSTANCE.get(IMinecraftClientWrapper.class);
 	private static final IMinecraftRenderWrapper MC_RENDER = SingletonInjector.INSTANCE.get(IMinecraftRenderWrapper.class);
 	private static final IMinecraftGLWrapper GLMC = SingletonInjector.INSTANCE.get(IMinecraftGLWrapper.class);
 	
@@ -58,9 +60,9 @@ public class FadeShader extends AbstractShaderRenderer
 	
 	public int uStartFadeBlockDistance = -1;
 	public int uEndFadeBlockDistance = -1;
-	
 	public int uMaxLevelHeight = -1;
 	
+	public int uOnlyRenderLods = -1;
 	
 	
 	
@@ -85,15 +87,16 @@ public class FadeShader extends AbstractShaderRenderer
 		this.uDhInvMvmProj = this.shader.tryGetUniformLocation("uDhInvMvmProj");
 		this.uMcInvMvmProj = this.shader.tryGetUniformLocation("uMcInvMvmProj");
 		
-		this.uMcDepthTexture = this.shader.tryGetUniformLocation("uMcDepthMap");
+		this.uMcDepthTexture = this.shader.tryGetUniformLocation("uMcDepthTexture");
 		this.uDhDepthTexture = this.shader.tryGetUniformLocation("uDhDepthTexture");
 		this.uCombinedMcDhColorTexture = this.shader.tryGetUniformLocation("uCombinedMcDhColorTexture");
 		this.uDhColorTexture = this.shader.tryGetUniformLocation("uDhColorTexture");
 		
 		this.uStartFadeBlockDistance = this.shader.tryGetUniformLocation("uStartFadeBlockDistance");
 		this.uEndFadeBlockDistance = this.shader.tryGetUniformLocation("uEndFadeBlockDistance");
-		
 		this.uMaxLevelHeight = this.shader.tryGetUniformLocation("uMaxLevelHeight");
+		
+		this.uOnlyRenderLods = this.shader.tryGetUniformLocation("uOnlyRenderLods");
 		
 	}
 	
@@ -106,8 +109,8 @@ public class FadeShader extends AbstractShaderRenderer
 	@Override
 	protected void onApplyUniforms(float partialTicks)
 	{
-		if (this.inverseMcMvmProjMatrix != null) this.shader.setUniform(this.uMcInvMvmProj, this.inverseMcMvmProjMatrix);
-		if (this.inverseDhMvmProjMatrix != null) this.shader.setUniform(this.uDhInvMvmProj, this.inverseDhMvmProjMatrix);
+		this.shader.setUniform(this.uMcInvMvmProj, this.inverseMcMvmProjMatrix);
+		this.shader.setUniform(this.uDhInvMvmProj, this.inverseDhMvmProjMatrix);
 		
 		
 		float dhNearClipDistance = RenderUtil.getNearClipPlaneInBlocksForFading(partialTicks);
@@ -120,10 +123,12 @@ public class FadeShader extends AbstractShaderRenderer
 		float fadeStartDistance = dhNearClipDistance * 1.5f;
 		float fadeEndDistance = dhNearClipDistance * 1.9f;
 		
-		if (this.uStartFadeBlockDistance != -1) this.shader.setUniform(this.uStartFadeBlockDistance, fadeStartDistance);
-		if (this.uEndFadeBlockDistance != -1) this.shader.setUniform(this.uEndFadeBlockDistance, fadeEndDistance);
+		this.shader.setUniform(this.uStartFadeBlockDistance, fadeStartDistance);
+		this.shader.setUniform(this.uEndFadeBlockDistance, fadeEndDistance);
 		
-		if (this.uMaxLevelHeight != -1) this.shader.setUniform(this.uMaxLevelHeight, this.levelMaxHeight);
+		this.shader.setUniform(this.uMaxLevelHeight, this.levelMaxHeight);
+		
+		this.shader.setUniform(this.uOnlyRenderLods, Config.Client.Advanced.Debugging.lodOnlyMode.get());
 	}
 	
 	public void setProjectionMatrix(Mat4f mcModelViewMatrix, Mat4f mcProjectionMatrix, float partialTicks)
@@ -153,6 +158,19 @@ public class FadeShader extends AbstractShaderRenderer
 	@Override
 	protected void onRender()
 	{
+		int depthTextureId = LodRenderer.getActiveDepthTextureId();
+		int colorTextureId = LodRenderer.getActiveColorTextureId();
+		
+		if (depthTextureId == -1
+			|| colorTextureId == -1)
+		{
+			// the renderer is currently being re-built and/or inactive,
+			// we don't need to/can't render fading
+			return;
+		}
+		
+		
+		
 		GLMC.glBindFramebuffer(GL32.GL_FRAMEBUFFER, this.frameBuffer);
 		GLMC.disableScissorTest();
 		GLMC.disableDepthTest();
@@ -163,7 +181,7 @@ public class FadeShader extends AbstractShaderRenderer
 		GL32.glUniform1i(this.uMcDepthTexture, 0);
 		
 		GLMC.glActiveTexture(GL32.GL_TEXTURE1);
-		GLMC.glBindTexture(LodRenderer.getActiveDepthTextureId());
+		GLMC.glBindTexture(depthTextureId);
 		GL32.glUniform1i(this.uDhDepthTexture, 1);
 		
 		GLMC.glActiveTexture(GL32.GL_TEXTURE2);
@@ -171,7 +189,7 @@ public class FadeShader extends AbstractShaderRenderer
 		GL32.glUniform1i(this.uCombinedMcDhColorTexture, 2);
 		
 		GLMC.glActiveTexture(GL32.GL_TEXTURE3);
-		GLMC.glBindTexture(LodRenderer.getActiveColorTextureId());
+		GLMC.glBindTexture(colorTextureId);
 		GL32.glUniform1i(this.uDhColorTexture, 3);
 		
 		

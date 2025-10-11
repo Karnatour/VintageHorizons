@@ -5,12 +5,13 @@ import com.seibel.distanthorizons.core.config.listeners.ConfigChangeListener;
 import com.seibel.distanthorizons.core.level.AbstractDhServerLevel;
 import com.seibel.distanthorizons.core.multiplayer.config.SessionConfig;
 import com.seibel.distanthorizons.core.multiplayer.fullData.FullDataPayloadSender;
-import com.seibel.distanthorizons.core.network.event.internal.CloseInternalEvent;
+import com.seibel.distanthorizons.core.multiplayer.fullData.SharedBandwidthLimit;
 import com.seibel.distanthorizons.core.network.event.internal.IncompatibleMessageInternalEvent;
-import com.seibel.distanthorizons.core.network.exceptions.RateLimitedException;
 import com.seibel.distanthorizons.core.network.messages.base.CloseReasonMessage;
 import com.seibel.distanthorizons.core.network.messages.base.LevelInitMessage;
 import com.seibel.distanthorizons.core.network.messages.base.SessionConfigMessage;
+import com.seibel.distanthorizons.core.network.event.internal.CloseInternalEvent;
+import com.seibel.distanthorizons.core.network.exceptions.RateLimitedException;
 import com.seibel.distanthorizons.core.network.messages.fullData.FullDataSourceRequestMessage;
 import com.seibel.distanthorizons.core.network.session.NetworkSession;
 import com.seibel.distanthorizons.core.util.ratelimiting.SupplierBasedRateAndConcurrencyLimiter;
@@ -24,7 +25,7 @@ public class ServerPlayerState implements Closeable
 {
 	private final ConfigChangeListener<String> levelKeyPrefixChangeListener
 			= new ConfigChangeListener<>(Config.Server.levelKeyPrefix, this::onLevelKeyPrefixConfigChanged);
-	private final SessionConfig.AnyChangeListener configAnyChangeListener = new SessionConfig.AnyChangeListener(this::onSessionConfigChanged);
+	private final SessionConfig.AnyChangeListener configAnyChangeListener = new SessionConfig.AnyChangeListener(this::sendConfigMessage);
 	
 	
 	private String lastLevelKey = "";
@@ -48,16 +49,17 @@ public class ServerPlayerState implements Closeable
 	// constructors //
 	//==============//
 	
-	public ServerPlayerState(IServerPlayerWrapper serverPlayer)
+	public ServerPlayerState(IServerPlayerWrapper serverPlayer, SharedBandwidthLimit sharedBandwidthLimit)
 	{
 		this.networkSession = new NetworkSession(serverPlayer);
-		this.fullDataPayloadSender = new FullDataPayloadSender(this.networkSession, this.sessionConfig::getMaxDataTransferSpeed);
+		this.fullDataPayloadSender = new FullDataPayloadSender(this.networkSession, this.sessionConfig::getPlayerBandwidthLimit, sharedBandwidthLimit);
 		
 		this.networkSession.registerHandler(SessionConfigMessage.class, (sessionConfigMessage) ->
 		{
 			this.sessionConfig.constrainingConfig = sessionConfigMessage.config;
+			
 			this.sendLevelKey();
-			this.networkSession.sendMessage(new SessionConfigMessage(this.sessionConfig));
+			this.sendConfigMessage();
 		});
 		
 		this.networkSession.registerHandler(CloseInternalEvent.class, event -> {
@@ -93,7 +95,14 @@ public class ServerPlayerState implements Closeable
 		}
 	}
 	
-	private void onSessionConfigChanged() { this.networkSession.sendMessage(new SessionConfigMessage(this.sessionConfig)); }
+	private void sendConfigMessage()
+	{
+		double coordinateScale = this.getServerPlayer().getLevel().getDimensionType().getCoordinateScale();
+		this.sessionConfig.constrainValue(Config.Server.generationBoundsX, (int) (Config.Server.generationBoundsX.get() / coordinateScale));
+		this.sessionConfig.constrainValue(Config.Server.generationBoundsZ, (int) (Config.Server.generationBoundsZ.get() / coordinateScale));
+		
+		this.networkSession.sendMessage(new SessionConfigMessage(this.sessionConfig));
+	}
 	
 	
 	

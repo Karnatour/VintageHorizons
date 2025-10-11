@@ -19,7 +19,14 @@
 
 package com.seibel.distanthorizons.core.level;
 
+import com.seibel.distanthorizons.api.enums.rendering.EDhApiBlockMaterial;
+import com.seibel.distanthorizons.api.interfaces.render.IDhApiRenderableBoxGroup;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiChunkModifiedEvent;
+import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiRenderParam;
+import com.seibel.distanthorizons.api.objects.math.DhApiVec3d;
+import com.seibel.distanthorizons.api.objects.render.DhApiRenderableBox;
+import com.seibel.distanthorizons.api.objects.render.DhApiRenderableBoxGroupShading;
+import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.dataObjects.fullData.sources.FullDataSourceV2;
 import com.seibel.distanthorizons.core.file.fullDatafile.DelayedFullDataSourceSaveCache;
 import com.seibel.distanthorizons.core.generation.DhLightingEngine;
@@ -29,20 +36,27 @@ import com.seibel.distanthorizons.core.pos.DhSectionPos;
 import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos;
 import com.seibel.distanthorizons.core.render.renderer.generic.CloudRenderHandler;
 import com.seibel.distanthorizons.core.render.renderer.generic.GenericObjectRenderer;
+import com.seibel.distanthorizons.core.render.renderer.generic.GenericRenderObjectFactory;
 import com.seibel.distanthorizons.core.sql.dto.BeaconBeamDTO;
 import com.seibel.distanthorizons.core.sql.dto.ChunkHashDTO;
 import com.seibel.distanthorizons.core.sql.repo.AbstractDhRepo;
 import com.seibel.distanthorizons.core.sql.repo.BeaconBeamRepo;
 import com.seibel.distanthorizons.core.sql.repo.ChunkHashRepo;
+import com.seibel.distanthorizons.core.util.ColorUtil;
 import com.seibel.distanthorizons.core.util.KeyedLockContainer;
 import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.chunk.IChunkWrapper;
+import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import com.seibel.distanthorizons.coreapi.DependencyInjection.ApiEventInjector;
+import com.seibel.distanthorizons.coreapi.ModInfo;
+import com.seibel.distanthorizons.coreapi.util.MathUtil;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
 import java.io.File;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -72,13 +86,15 @@ public abstract class AbstractDhLevel implements IDhLevel
 	@Nullable
 	protected CloudRenderHandler cloudRenderHandler;
 	
+	private IDhApiRenderableBoxGroup unexploredFogRenderableBoxGroup;
+	
 	
 	
 	//=============//
 	// constructor //
 	//=============//
 	
-	protected AbstractDhLevel() {  }
+	protected AbstractDhLevel() { }
 	
 	/** 
 	 * Creating the repos requires access to the level file, which isn't
@@ -140,7 +156,7 @@ public abstract class AbstractDhLevel implements IDhLevel
 	@Override
 	public void updateChunkAsync(IChunkWrapper chunkWrapper, int chunkHash)
 	{
-		try (FullDataSourceV2 dataSource = FullDataSourceV2.createFromChunk(chunkWrapper))
+		try (FullDataSourceV2 dataSource = FullDataSourceV2.createFromChunk(this.getLevelWrapper(), chunkWrapper))
 		{
 			if (dataSource == null)
 			{
@@ -276,7 +292,7 @@ public abstract class AbstractDhLevel implements IDhLevel
 		
 		
 		// locked to prevent two threads from updating the same section at the same time
-		ReentrantLock lock = this.beaconUpdateLockContainer.getLockForPos(sectionPosForLock);
+		ReentrantLock lock = this.beaconUpdateLockContainer.getLockForPos(sectionPosForLock); // TODO this can cause a lot of slow-downs
 		try
 		{
 			lock.lock();
@@ -375,6 +391,15 @@ public abstract class AbstractDhLevel implements IDhLevel
 		{
 			this.beaconBeamRepo.close();
 		}
+		
+		
+		GenericObjectRenderer genericRenderer = this.getGenericRenderer();
+		if (genericRenderer != null 
+			&& this.unexploredFogRenderableBoxGroup != null)
+		{
+			genericRenderer.remove(this.unexploredFogRenderableBoxGroup.getId());
+		}
+		
 		
 		this.delayedFullDataSourceSaveCache.close();
 	}

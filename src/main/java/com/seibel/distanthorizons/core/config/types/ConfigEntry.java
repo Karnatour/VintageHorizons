@@ -21,11 +21,13 @@ package com.seibel.distanthorizons.core.config.types;
 
 
 import com.seibel.distanthorizons.core.config.NumberUtil;
+import com.seibel.distanthorizons.core.config.file.ConfigFileHandler;
 import com.seibel.distanthorizons.core.config.listeners.ConfigChangeListener;
 import com.seibel.distanthorizons.core.config.listeners.IConfigListener;
 import com.seibel.distanthorizons.core.config.types.enums.EConfigEntryAppearance;
 import com.seibel.distanthorizons.core.config.types.enums.EConfigEntryPerformance;
 import com.seibel.distanthorizons.coreapi.interfaces.config.IConfigEntry;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +56,8 @@ public class ConfigEntry<T> extends AbstractConfigType<T, ConfigEntry<T>> implem
 	 * and any get() method calls will return the apiValue if it is set.
 	 */
 	public final boolean allowApiOverride;
+	/** Will be null if un-set */
+	@Nullable
 	private T apiValue;
 	
 	
@@ -91,13 +95,15 @@ public class ConfigEntry<T> extends AbstractConfigType<T, ConfigEntry<T>> implem
 	}
 	@Override
 	public T getApiValue() { return this.apiValue; }
+	@Override 
+	public boolean apiIsOverriding() { return this.allowApiOverride && this.apiValue != null; }
 	@Override
 	public boolean getAllowApiOverride() { return this.allowApiOverride; }
 	
 	/** 
 	 * DONT USE THIS IN YOUR CODE <br>
 	 * Sets the value without informing the rest of the code (ie, doesnt call listeners, or saves the value). <br>
-	 * Should only be used when loading the config from the file (in places like the {@link com.seibel.distanthorizons.core.config.file.ConfigFileHandling} or {@link com.seibel.distanthorizons.core.config.ConfigBase})
+	 * Should only be used when loading the config from the file (in places like the {@link ConfigFileHandler} or {@link com.seibel.distanthorizons.core.config.ConfigBase})
 	 */
 	public void pureSet(T newValue) {
 		super.set(newValue);
@@ -132,9 +138,9 @@ public class ConfigEntry<T> extends AbstractConfigType<T, ConfigEntry<T>> implem
 	@Override
 	public T get()
 	{
-		if (allowApiOverride && apiValue != null)
+		if (this.allowApiOverride && this.apiValue != null)
 		{
-			return apiValue;
+			return this.apiValue;
 		}
 		
 		return super.get();
@@ -302,9 +308,9 @@ public class ConfigEntry<T> extends AbstractConfigType<T, ConfigEntry<T>> implem
 	}
 	
 	/** This should normally not be called since set() automatically calls this */
-	public void save() { configBase.configFileINSTANCE.saveEntry(this); }
+	public void save() { configBase.configFileHandler.saveEntry(this); }
 	/** This should normally not be called except for special circumstances */
-	public void load() { configBase.configFileINSTANCE.loadEntry(this); }
+	public void load() { configBase.configFileHandler.loadEntry(this); }
 	
 	
 	@Override

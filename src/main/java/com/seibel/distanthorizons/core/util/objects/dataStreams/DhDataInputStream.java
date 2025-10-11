@@ -19,6 +19,8 @@
 
 package com.seibel.distanthorizons.core.util.objects.dataStreams;
 
+import com.github.luben.zstd.RecyclingBufferPool;
+import com.github.luben.zstd.ZstdInputStream;
 import com.seibel.distanthorizons.api.enums.config.EDhApiDataCompressionMode;
 import net.jpountz.lz4.LZ4FrameInputStream;
 import org.apache.logging.log4j.LogManager;
@@ -59,6 +61,8 @@ public class DhDataInputStream extends DataInputStream
 					return stream;
 				case LZ4:
 					return new LZ4FrameInputStream(stream);
+				case Z_STD:
+					return new ZstdInputStream(stream, RecyclingBufferPool.INSTANCE);
 				case LZMA2:
 					// using an array cache significantly reduces GC pressure
 					ResettableArrayCache arrayCache = LZMA_RESETTABLE_ARRAY_CACHE_GETTER.get();
@@ -109,7 +113,10 @@ public class DhDataInputStream extends DataInputStream
 		}
 	}
 	
-	@Override
-	public void close() throws IOException { /* Do nothing. */ }
+	// TODO at one point closing the streams caused errors, is that due to a bug with LZMA streams or some bug in DH's code that was since fixed?
+	//  if streams aren't closed that cause cause higher-than-expected native memory use if the GC decides
+	//  it doesn't want to clear the stream objects
+	//@Override
+	//public void close() throws IOException { /* Do nothing. */ }
 	
 }

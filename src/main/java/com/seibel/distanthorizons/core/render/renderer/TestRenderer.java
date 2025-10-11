@@ -30,6 +30,7 @@ import com.seibel.distanthorizons.core.render.glObject.vertexAttribute.AbstractV
 import com.seibel.distanthorizons.core.render.glObject.vertexAttribute.VertexPointer;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftGLWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRenderWrapper;
+
 import org.apache.logging.log4j.LogManager;
 import org.lwjgl.opengl.GL32;
 
@@ -105,6 +106,7 @@ public class TestRenderer
 	
 	public void render()
 	{
+		// TODO fix for MC 1.21.5
 		this.init();
 		
 		GLMC.glBindFramebuffer(GL32.GL_FRAMEBUFFER, MC_RENDER.getTargetFrameBuffer());

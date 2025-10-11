@@ -20,6 +20,7 @@
 package com.seibel.distanthorizons.core.util.math;
 
 import com.seibel.distanthorizons.api.objects.math.DhApiVec3d;
+import com.seibel.distanthorizons.api.objects.math.DhApiVec3f;
 import com.seibel.distanthorizons.coreapi.util.MathUtil;
 
 /**

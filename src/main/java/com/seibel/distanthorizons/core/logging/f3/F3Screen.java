@@ -38,7 +38,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.text.NumberFormat;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class F3Screen
@@ -82,6 +82,7 @@ public class F3Screen
 		// multi thread pools
 		PriorityTaskPicker.Executor worldGenPool = ThreadPoolUtil.getWorldGenExecutor();
 		PriorityTaskPicker.Executor fileHandlerPool = ThreadPoolUtil.getFileHandlerExecutor();
+		PriorityTaskPicker.Executor renderLoadingPool = ThreadPoolUtil.getRenderLoadingExecutor();
 		PriorityTaskPicker.Executor updatePool = ThreadPoolUtil.getUpdatePropagatorExecutor();
 		PriorityTaskPicker.Executor lodBuilderPool = ThreadPoolUtil.getChunkToLodBuilderExecutor();
 		PriorityTaskPicker.Executor networkPool = ThreadPoolUtil.getNetworkCompressionExecutor();
@@ -92,12 +93,21 @@ public class F3Screen
 		ThreadPoolExecutor migrationPool = ThreadPoolUtil.getFullDataMigrationExecutor();
 		
 		AbstractDhWorld world = SharedApi.getAbstractDhWorld();
+		if (world == null)
+		{
+			return;
+		}
+		
 		Iterable<? extends IDhLevel> levelIterator = world.getAllLoadedLevels();
 		
 		
 		// DH version
 		messageList.add("");
 		messageList.add(ModInfo.READABLE_NAME+": "+ModInfo.VERSION);
+		if (ModInfo.IS_DEV_BUILD)
+		{
+			messageList.add("Build: " + StringUtil.shortenString(ModJarInfo.Git_Commit, 8) + " (" + ModJarInfo.Git_Branch + ")");
+		}
 		
 		// player pos
 		if (Config.Client.Advanced.Debugging.F3Screen.showPlayerPos.get())
@@ -120,6 +130,7 @@ public class F3Screen
 		{
 			// multi thread pools
 			messageList.add(getThreadPoolStatString("World Gen/Import", worldGenPool));
+			messageList.add(getThreadPoolStatString("Render Load", renderLoadingPool));
 			messageList.add(getThreadPoolStatString("File Handler", fileHandlerPool));
 			messageList.add(getThreadPoolStatString("Update Propagator", updatePool));
 			messageList.add(getThreadPoolStatString("LOD Builder", lodBuilderPool));

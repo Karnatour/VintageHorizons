@@ -45,9 +45,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -211,8 +210,18 @@ public class GeneratedFullDataSourceProvider extends FullDataSourceProviderV2 im
 		}
 		
 		
-		PriorityTaskPicker.Executor fileExecutor = ThreadPoolUtil.getFileHandlerExecutor();
-		if (fileExecutor == null || fileExecutor.getQueueSize() >= getMaxUpdateTaskCount() / 2)
+		PriorityTaskPicker.Executor renderLoadExecutor = ThreadPoolUtil.getRenderLoadingExecutor();
+		if (renderLoadExecutor == null 
+			|| renderLoadExecutor.getQueueSize() >= getMaxUpdateTaskCount() / 2)
+		{
+			// don't queue additional world gen requests if the render loader handler is overwhelmed,
+			// otherwise LODs may not load in properly
+			return false;
+		}
+		
+		PriorityTaskPicker.Executor fileHandlerExecutor = ThreadPoolUtil.getFileHandlerExecutor();
+		if (fileHandlerExecutor == null 
+			|| fileHandlerExecutor.getQueueSize() >= getMaxUpdateTaskCount() / 2)
 		{
 			// don't queue additional world gen requests if the file handler is overwhelmed,
 			// otherwise LODs may not load in properly
@@ -244,6 +253,7 @@ public class GeneratedFullDataSourceProvider extends FullDataSourceProviderV2 im
 			
 			return false;
 		}
+		
 		
 		int availableTaskSlots = maxWorldGenQueueCount - worldGenQueue.getWaitingTaskCount();
 		if (availableTaskSlots <= 0)

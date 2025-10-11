@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 public class RemoteWorldRetrievalQueue extends AbstractFullDataNetworkRequestQueue implements IFullDataSourceRetrievalQueue, IDebugRenderable
 {
@@ -48,12 +48,7 @@ public class RemoteWorldRetrievalQueue extends AbstractFullDataNetworkRequestQue
 	public void startAndSetTargetPos(DhBlockPos2D targetPos) { super.tick(targetPos); }
 	
 	@Override
-	public byte lowestDataDetail()
-	{
-		return Config.Server.Experimental.enableNSizedGeneration.get()
-				? LodUtil.BLOCK_DETAIL_LEVEL + 12
-				: LodUtil.BLOCK_DETAIL_LEVEL;
-	} // TODO should be the same as what the server's update propagator can provide
+	public byte lowestDataDetail() { return LodUtil.BLOCK_DETAIL_LEVEL + 12; } // TODO should be the same as what the server's update propagator can provide
 	@Override
 	public byte highestDataDetail() { return LodUtil.BLOCK_DETAIL_LEVEL; }
 	
@@ -127,6 +122,18 @@ public class RemoteWorldRetrievalQueue extends AbstractFullDataNetworkRequestQue
 		}
 		
 		return DhSectionPos.getChebyshevSignedBlockDistance(sectionPos, targetPos) <= this.networkState.sessionConfig.getMaxGenerationRequestDistance() * 16;
+	}
+	@Override
+	protected boolean onBeforeRequest(long sectionPos, CompletableFuture<ERequestResult> future)
+	{
+		if (DhSectionPos.getDetailLevel(sectionPos) > DhSectionPos.SECTION_MINIMUM_DETAIL_LEVEL
+				&& !Config.Server.Experimental.enableNSizedGeneration.get())
+		{
+			future.complete(ERequestResult.REQUIRES_SPLITTING);
+			return false;
+		}
+		
+		return true;
 	}
 	
 	@Override

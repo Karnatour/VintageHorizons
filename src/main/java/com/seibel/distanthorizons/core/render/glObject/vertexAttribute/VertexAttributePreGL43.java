@@ -19,13 +19,13 @@
 
 package com.seibel.distanthorizons.core.render.glObject.vertexAttribute;
 
-import com.seibel.distanthorizons.core.render.glObject.GLProxy;
-import org.lwjgl.opengl.GL32;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import com.seibel.distanthorizons.core.render.glObject.GLProxy;
+import org.lwjgl.opengl.GL32;
 
 
 public final class VertexAttributePreGL43 extends AbstractVertexAttribute

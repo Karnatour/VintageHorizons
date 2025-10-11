@@ -1,7 +1,6 @@
 package com.seibel.distanthorizons.common.wrappers.gui;
 
 import com.seibel.distanthorizons.core.config.ConfigBase;
-import com.seibel.distanthorizons.core.config.gui.OpenGLConfigScreen;
 import com.seibel.distanthorizons.coreapi.ModInfo;
 import net.minecraft.client.gui.GuiScreen;
 
@@ -24,7 +23,7 @@ public class GetConfigScreen {
             case Classic:
                 return ClassicConfigGUI.getScreen(ConfigBase.INSTANCE, parent, "client");
             case OpenGL:
-                return MinecraftScreen.getScreen(parent, new OpenGLConfigScreen(), ModInfo.ID + ".title");
+                //return MinecraftScreen.getScreen(parent, new OpenGLConfigScreen(), ModInfo.ID + ".title");
 //            case JavaFX -> MinecraftScreen.getScreen(parent, new JavaScreenHandlerScreen(new JavaScreenHandlerScreen.ExampleScreen()), ModInfo.ID + ".title");
             case JavaFX:
                 return null; //MinecraftScreen.getScreen(parent, new JavaScreenHandlerScreen(new ConfigScreen()), ModInfo.ID + ".title");

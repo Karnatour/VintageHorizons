@@ -33,18 +33,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  * we pool these arrays when possible. <br><br>
  * 
  * How pooled arrays can be returned: <br>
- * 1. <b> Closing the {@link PhantomArrayListParent} </b> <br>
+ * 1. <b> Closing the {@link AbstractPhantomArrayList} </b> <br>
  * The fastest and most efficient method of returning pooled arrays
  * is to call {@link AutoCloseable#close()}. <br><br>
  * 
- * 2. <b> {@link PhantomArrayListParent} Garbage Collection </b> <br>
+ * 2. <b> {@link AbstractPhantomArrayList} Garbage Collection </b> <br>
  * Some objects are used across many different threads and
- * cleanly closing them is impossible, so when the {@link PhantomArrayListParent}
+ * cleanly closing them is impossible, so when the {@link AbstractPhantomArrayList}
  * is automatically garbage collected we recover and recycle any
  * arrays it checked out.
  * This is less efficient since it may allow a lot of additional arrays to
  * be created while we wait for the garbage collector to run, but 
- * does prevent any leaks from {@link PhantomArrayListParent} that weren't closed.
+ * does prevent any leaks from {@link AbstractPhantomArrayList} that weren't closed.
  * 
  * <br><br>
  * <strong>Use Notes: </strong><br>
@@ -83,9 +83,9 @@ public class PhantomArrayListPool
 	 */
 	public final boolean logGarbageCollectedStacks;
 	
-	public final ConcurrentHashMap<Reference<? extends PhantomArrayListParent>, PhantomArrayListCheckout>
+	public final ConcurrentHashMap<Reference<? extends AbstractPhantomArrayList>, PhantomArrayListCheckout>
 			phantomRefToCheckout = new ConcurrentHashMap<>();
-	public final ReferenceQueue<PhantomArrayListParent> phantomRefQueue = new ReferenceQueue<>();
+	public final ReferenceQueue<AbstractPhantomArrayList> phantomRefQueue = new ReferenceQueue<>();
 	
 	
 	private final ConcurrentLinkedQueue<SoftReference<PhantomArrayListCheckout>> pooledCheckoutsRefs = new ConcurrentLinkedQueue<>();
@@ -274,7 +274,7 @@ public class PhantomArrayListPool
 					
 					allocationStackTraceCountPairList.clear();
 					
-					Reference<? extends PhantomArrayListParent> phantomRef = pool.phantomRefQueue.poll();
+					Reference<? extends AbstractPhantomArrayList> phantomRef = pool.phantomRefQueue.poll();
 					while (phantomRef != null)
 					{
 						// return the pooled arrays
@@ -306,9 +306,9 @@ public class PhantomArrayListPool
 					{
 						// we only want to log when something has been returned
 						if (checkoutCount != 0
-								|| returnedByteArrayCount != 0
-								|| returnedShortArrayCount != 0
-								|| returnedLongArrayCount != 0)
+							|| returnedByteArrayCount != 0
+							|| returnedShortArrayCount != 0
+							|| returnedLongArrayCount != 0)
 						{
 							LOGGER.warn("Pool: ["+ pool.name+"] phantom recovery. Returned checkouts:["+F3Screen.NUMBER_FORMAT.format(checkoutCount)+"], byte:["+F3Screen.NUMBER_FORMAT.format(returnedByteArrayCount)+"], short:["+F3Screen.NUMBER_FORMAT.format(returnedShortArrayCount)+"], long:["+F3Screen.NUMBER_FORMAT.format(returnedLongArrayCount)+"].");
 							
@@ -378,7 +378,7 @@ public class PhantomArrayListPool
 	// return checkout //
 	//=================//
 	
-	public void returnParentPhantomRef(@NotNull PhantomReference<PhantomArrayListParent> parentRef)
+	public void returnParentPhantomRef(@NotNull PhantomReference<AbstractPhantomArrayList> parentRef)
 	{
 		try
 		{

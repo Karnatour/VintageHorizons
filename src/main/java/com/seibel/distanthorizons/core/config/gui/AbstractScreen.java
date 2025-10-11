@@ -19,6 +19,7 @@
 
 package com.seibel.distanthorizons.core.config.gui;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 

@@ -21,6 +21,8 @@ package com.seibel.distanthorizons.core.dataObjects.render.columnViews;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
+import java.util.Iterator;
+
 public interface IColumnDataView
 {
 	long get(int index);

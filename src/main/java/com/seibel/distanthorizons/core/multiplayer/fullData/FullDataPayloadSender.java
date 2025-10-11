@@ -8,12 +8,11 @@ import io.netty.buffer.ByteBuf;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.IntSupplier;
+import java.util.function.*;
 
 public class FullDataPayloadSender implements AutoCloseable
 {
-	private static final int TICK_RATE = 4;
+	private static final int TICK_RATE = 20;
 	
 	/** 1 Mebibyte minus 576 bytes for other info */
 	public static final int FULL_DATA_SPLIT_SIZE_IN_BYTES = 1_048_000;
@@ -26,11 +25,14 @@ public class FullDataPayloadSender implements AutoCloseable
 	private final IntSupplier maxKBpsSupplier;
 	private final ConcurrentLinkedQueue<PendingTransfer> transferQueue = new ConcurrentLinkedQueue<>();
 	
+	private final SharedBandwidthLimit sharedBandwidthLimit;
 	
-	public FullDataPayloadSender(NetworkSession session, IntSupplier maxKBpsSupplier)
+	
+	public FullDataPayloadSender(NetworkSession session, IntSupplier maxKBpsSupplier, SharedBandwidthLimit sharedBandwidthLimit)
 	{
 		this.session = session;
 		this.maxKBpsSupplier = maxKBpsSupplier;
+		this.sharedBandwidthLimit = sharedBandwidthLimit;
 		UPLOAD_TIMER.scheduleAtFixedRate(this.tickTimerTask, 0, 1000 / TICK_RATE);
 	}
 	
@@ -38,12 +40,6 @@ public class FullDataPayloadSender implements AutoCloseable
 	public void close()
 	{
 		this.tickTimerTask.cancel();
-		
-		PendingTransfer pendingTransfer;
-		while ((pendingTransfer = this.transferQueue.poll()) != null)
-		{
-			pendingTransfer.close();
-		}
 	}
 	
 	
@@ -54,11 +50,16 @@ public class FullDataPayloadSender implements AutoCloseable
 	
 	private void tick()
 	{
-		int convertedMaxRate = this.maxKBpsSupplier.getAsInt();
-		convertedMaxRate = convertedMaxRate > 0 ? convertedMaxRate : Integer.MAX_VALUE / 1000;
+		int bandwidthShare = this.sharedBandwidthLimit.getBandwidthShare();
+		int maxPlayerRate = Math.min(this.maxKBpsSupplier.getAsInt(), bandwidthShare);
 		
 		// + 1 to account for rounding errors on values of < 4
-		int bytesToSend = (convertedMaxRate * 1000) / TICK_RATE + 1;
+		int bytesToSend = maxPlayerRate > 0
+				? (maxPlayerRate * 1000) / TICK_RATE + 1
+				: Integer.MAX_VALUE;
+		
+		this.sharedBandwidthLimit.setSenderActive(this, bytesToSend > 0);
+		
 		while (bytesToSend > 0)
 		{
 			PendingTransfer pendingTransfer = this.transferQueue.peek();
@@ -70,45 +71,31 @@ public class FullDataPayloadSender implements AutoCloseable
 			int chunkSize = Math.min(Math.min(bytesToSend, FULL_DATA_SPLIT_SIZE_IN_BYTES), pendingTransfer.buffer.readableBytes());
 			boolean isFirstChunk = pendingTransfer.buffer.readerIndex() == 0;
 			
-
-			// TODO FullDataSplitMessage chunkMessage = new FullDataSplitMessage(pendingTransfer.bufferId, pendingTransfer.buffer.readRetainedSlice(chunkSize), isFirstChunk);
-            FullDataSplitMessage chunkMessage = new FullDataSplitMessage(pendingTransfer.bufferId, pendingTransfer.buffer.readSlice(chunkSize).retain(), isFirstChunk);
-            this.session.sendMessage(chunkMessage);
-
+			FullDataSplitMessage chunkMessage = new FullDataSplitMessage(pendingTransfer.bufferId, pendingTransfer.buffer.readSlice(chunkSize).retain(), isFirstChunk);
+			this.session.sendMessage(chunkMessage);
+			
 			bytesToSend -= chunkSize;
 			
 			if (pendingTransfer.buffer.readableBytes() == 0)
 			{
 				pendingTransfer.sendFinalMessage.run();
-				pendingTransfer.close();
 				this.transferQueue.poll();
 			}
 		}
 	}
 	
 	
-	private static class PendingTransfer implements AutoCloseable
+	private static class PendingTransfer
 	{
 		public final int bufferId;
 		public final ByteBuf buffer;
 		public final Runnable sendFinalMessage;
-		private final AtomicBoolean isClosed = new AtomicBoolean();
 		
 		private PendingTransfer(FullDataPayload payload, Runnable sendFinalMessage)
 		{
 			this.bufferId = payload.dtoBufferId;
-			// TODO this.buffer = payload.dtoBuffer.retainedDuplicate().readerIndex(0);
-            this.buffer = payload.dtoBuffer.duplicate().retain().readerIndex(0);
+			this.buffer = payload.dtoBuffer.duplicate().readerIndex(0);
 			this.sendFinalMessage = sendFinalMessage;
-		}
-		
-		@Override
-		public void close()
-		{
-			if (this.isClosed.compareAndSet(false, true))
-			{
-				this.buffer.release();
-			}
 		}
 		
 	}

@@ -283,7 +283,7 @@ public class BlockStateWrapper implements IBlockStateWrapper
 		
 		HashSet<String> blockResourceLocationColorBelow = new HashSet<>();
 		checkForModCompat(blockResourceLocationColorBelow);
-		blockResourceLocationsColorBelow = getBlockStrings(Config.Client.Advanced.Modded.blockResourceLocationsColorBelow, blockResourceLocationColorBelow);
+		//blockResourceLocationsColorBelow = getBlockStrings(Config.Client.Advanced.Modded.blockResourceLocationsColorBelow, blockResourceLocationColorBelow);
 		return blockResourceLocationsColorBelow;
 	}
 	
@@ -541,6 +541,11 @@ public class BlockStateWrapper implements IBlockStateWrapper
 	public boolean isBeaconBaseBlock() { return this.isBeaconBaseBlock; }
 	@Override
 	public boolean isBeaconTintBlock() { return this.beaconTintColor != null; }
+	@Override
+	public boolean allowsBeaconBeamPassage()
+	{
+		return false;
+	}
 	
 	@Override
 	public Color getMapColor() { return this.mapColor; }

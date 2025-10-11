@@ -22,25 +22,25 @@ package com.seibel.distanthorizons.core.generation;
 import com.seibel.distanthorizons.core.dataObjects.fullData.sources.FullDataSourceV2;
 import com.seibel.distanthorizons.core.enums.EDhDirection;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
-import com.seibel.distanthorizons.core.pos.DhChunkPos;
-import com.seibel.distanthorizons.core.pos.DhSectionPos;
 import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos;
 import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPosMutable;
+import com.seibel.distanthorizons.core.pos.DhChunkPos;
+import com.seibel.distanthorizons.core.pos.DhSectionPos;
 import com.seibel.distanthorizons.core.render.renderer.DebugRenderer;
 import com.seibel.distanthorizons.core.util.FullDataPointUtil;
 import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.block.IBlockStateWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.chunk.IChunkWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.misc.IMutableBlockPosWrapper;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.util.*;
-import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
+
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This logic was roughly based on
@@ -328,7 +328,8 @@ public class DhLightingEngine
 					continue;
 				}
 				
-				if (relNeighbourBlockPos.getY() < neighbourChunk.getMinNonEmptyHeight() || relNeighbourBlockPos.getY() > neighbourChunk.getExclusiveMaxBuildHeight())
+				if (relNeighbourBlockPos.getY() < neighbourChunk.getMinNonEmptyHeight()
+					|| relNeighbourBlockPos.getY() >= neighbourChunk.getExclusiveMaxBuildHeight())
 				{
 					// the light pos is outside the chunk's min/max height,
 					// this can happen if given a chunk that hasn't finished generating

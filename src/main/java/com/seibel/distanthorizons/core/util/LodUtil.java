@@ -19,21 +19,24 @@
 
 package com.seibel.distanthorizons.core.util;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.RejectedExecutionException;
+
+import com.seibel.distanthorizons.api.enums.config.EDhApiVanillaOverdraw;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import com.seibel.distanthorizons.core.render.vertexFormat.DefaultLodVertexFormats;
 import com.seibel.distanthorizons.core.render.vertexFormat.LodVertexFormat;
 import com.seibel.distanthorizons.core.util.objects.UncheckedInterruptedException;
 import com.seibel.distanthorizons.core.wrapperInterfaces.block.IBlockStateWrapper;
-import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRenderWrapper;
+import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
+import com.seibel.distanthorizons.core.wrapperInterfaces.world.IDimensionTypeWrapper;
+import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.RejectedExecutionException;
 
 /**
  * This class holds methods and constants that may be used in multiple places.

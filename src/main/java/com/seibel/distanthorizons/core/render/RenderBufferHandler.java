@@ -35,9 +35,7 @@ import com.seibel.distanthorizons.core.pos.DhSectionPos;
 import com.seibel.distanthorizons.core.pos.Pos2D;
 import com.seibel.distanthorizons.core.render.renderer.LodRenderer;
 import com.seibel.distanthorizons.core.util.LodUtil;
-import com.seibel.distanthorizons.core.util.math.Mat4f;
-import com.seibel.distanthorizons.core.util.math.Vec3d;
-import com.seibel.distanthorizons.core.util.math.Vec3f;
+import com.seibel.distanthorizons.core.util.objects.RollingAverage;
 import com.seibel.distanthorizons.core.util.objects.SortedArraySet;
 import com.seibel.distanthorizons.core.util.objects.quadTree.QuadNode;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftGLWrapper;
@@ -45,6 +43,9 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRen
 import com.seibel.distanthorizons.core.wrapperInterfaces.modAccessor.IIrisAccessor;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import com.seibel.distanthorizons.coreapi.interfaces.dependencyInjection.IOverrideInjector;
+import com.seibel.distanthorizons.core.util.math.Mat4f;
+import com.seibel.distanthorizons.core.util.math.Vec3d;
+import com.seibel.distanthorizons.core.util.math.Vec3f;
 import org.apache.logging.log4j.Logger;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
@@ -174,50 +175,17 @@ public class RenderBufferHandler implements AutoCloseable
 			}
 		}
 		
-		Pos2D cPos = this.lodQuadTree.getCenterBlockPos().toPos2D();
+		Pos2D centerPos = this.lodQuadTree.getCenterBlockPos().toPos2D();
 		
 		// Now that we have the axis directions, we can sort the render list
 		Comparator<LoadedRenderBuffer> farToNearComparator = (loadedBufferA, loadedBufferB) ->
 		{
 			Pos2D aPos = DhSectionPos.getCenterBlockPos(loadedBufferA.pos).toPos2D();
 			Pos2D bPos = DhSectionPos.getCenterBlockPos(loadedBufferB.pos).toPos2D();
-			if (true)
-			{
-				int aManhattanDistance = aPos.manhattanDist(cPos);
-				int bManhattanDistance = bPos.manhattanDist(cPos);
-				return bManhattanDistance - aManhattanDistance;
-			}
 			
-			for (EDhDirection axisDirection : axisDirections)
-			{
-				if (axisDirection.getAxis().isVertical())
-				{
-					continue; // We only sort in the horizontal direction
-				}
-				
-				int abPosDifference;
-				if (axisDirection.getAxis().equals(EDhDirection.Axis.X))
-				{
-					abPosDifference = aPos.getX() - bPos.getX();
-				}
-				else
-				{
-					abPosDifference = aPos.getY() - bPos.getY();
-				}
-				
-				if (abPosDifference == 0)
-				{
-					continue;
-				}
-				
-				if (axisDirection.getAxisDirection().equals(EDhDirection.AxisDirection.NEGATIVE))
-				{
-					abPosDifference = -abPosDifference; // Reverse the sign
-				}
-				return abPosDifference;
-			}
-			
-			return DhSectionPos.getDetailLevel(loadedBufferA.pos) - DhSectionPos.getDetailLevel(loadedBufferB.pos); // If all else fails, sort by detail
+			int aManhattanDistance = aPos.manhattanDist(centerPos);
+			int bManhattanDistance = bPos.manhattanDist(centerPos);
+			return bManhattanDistance - aManhattanDistance;
 		};
 		this.loadedNearToFarBuffers = new SortedArraySet<>((a, b) -> -farToNearComparator.compare(a, b)); // TODO is the comparator named wrong?
 		
@@ -277,18 +245,20 @@ public class RenderBufferHandler implements AutoCloseable
 			this.culledBufferCount = 0;
 		}
 		
-		boolean rebuildAllBuffers = this.rebuildAllBuffers.getAndSet(false);
-		Iterator<QuadNode<LodRenderSection>> nodeIterator = this.lodQuadTree.nodeIterator();
-		while (nodeIterator.hasNext())
+		// setup iterator with culling frustum
+		Iterator<QuadNode<LodRenderSection>> nodeIterator = this.lodQuadTree.nodeIteratorWithStoppingFilter((QuadNode<LodRenderSection> node) ->
 		{
-			QuadNode<LodRenderSection> node = nodeIterator.next();
+			if (node == null)
+			{
+				return true;
+			}
 			
-			long sectionPos = node.sectionPos;
 			LodRenderSection renderSection = node.value;
 			if (renderSection == null)
 			{
-				continue;
+				return false;
 			}
+			
 			
 			try
 			{
@@ -309,22 +279,48 @@ public class RenderBufferHandler implements AutoCloseable
 							this.culledBufferCount++;
 						}
 						
-						continue;
+						return true;
 					}
 				}
 				
+				return false;
+			}
+			catch (Exception e)
+			{
+				LOGGER.error("Unexpected issue during culling for node pos: ["+DhSectionPos.toString(node.sectionPos)+"], error: ["+e.getMessage()+"].", e);
+				
+				// don't cull if there was an unexpected issue
+				return false;
+			}
+		});
+		
+		while (nodeIterator.hasNext())
+		{
+			QuadNode<LodRenderSection> node = nodeIterator.next();
+			
+			long sectionPos = node.sectionPos;
+			LodRenderSection renderSection = node.value;
+			if (renderSection == null)
+			{
+				continue;
+			}
+			
+			
+			
+			try
+			{
 				ColumnRenderBuffer buffer = renderSection.renderBuffer;
-				if (buffer == null || !renderSection.getRenderingEnabled())
+				if (buffer == null 
+					|| !renderSection.getRenderingEnabled())
 				{
 					continue;
 				}
-				
 				
 				this.loadedNearToFarBuffers.add(new LoadedRenderBuffer(buffer, sectionPos));
 			}
 			catch (Exception e)
 			{
-				LOGGER.error("Error updating QuadTree render source at " + renderSection.pos + ".", e);
+				LOGGER.error("Error updating QuadTree render source at [" + DhSectionPos.toString(renderSection.pos) + "], error: ["+e.getMessage()+"].", e);
 			}
 		}
 		
@@ -357,6 +353,7 @@ public class RenderBufferHandler implements AutoCloseable
 		// debug wireframe setup //
 		//=======================//
 		
+		// TODO move this logic into LodRenderer so all the GL states can be handled there
 		boolean renderWireframe = Config.Client.Advanced.Debugging.renderWireframe.get();
 		if (renderWireframe)
 		{

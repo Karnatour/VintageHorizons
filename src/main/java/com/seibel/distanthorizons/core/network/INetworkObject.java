@@ -24,15 +24,10 @@ import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 /** The base for any object that can be sent over the network. */
 public interface INetworkObject
@@ -174,16 +169,16 @@ public interface INetworkObject
 			this.put(String.class, new Codec((obj, outByteBuff) -> INetworkObject.writeStringStatic((String) obj, outByteBuff), (obj, inByteBuff) -> INetworkObject.readStringStatic(inByteBuff)));
 			
 			this.put(INetworkObject.class, new Codec(INetworkObject::encode, INetworkObject::decodeToInstance));
-			this.put(Entry.class, new Codec(
+			this.put(Map.Entry.class, new Codec(
 					(obj, outByteBuff) -> 
 					{
-						Entry<?, ?> entry = (Entry<?, ?>) obj;
+						Map.Entry<?, ?> entry = (Entry<?, ?>) obj;
 						getCodec(entry.getKey().getClass()).encode.accept(entry.getKey(), outByteBuff);
 						getCodec(entry.getValue().getClass()).encode.accept(entry.getValue(), outByteBuff);
 					},
 					(obj, inByteBuff) -> 
 					{
-						Entry<?, ?> entry = (Entry<?, ?>) obj;
+						Map.Entry<?, ?> entry = (Entry<?, ?>) obj;
 						return new SimpleEntry<>(
 							getCodec(entry.getKey().getClass()).decode.apply(entry.getKey(), inByteBuff),
 							getCodec(entry.getValue().getClass()).decode.apply(entry.getValue(), inByteBuff)

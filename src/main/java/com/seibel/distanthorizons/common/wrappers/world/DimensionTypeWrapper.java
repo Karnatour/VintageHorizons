@@ -91,9 +91,14 @@ public class DimensionTypeWrapper implements IDimensionTypeWrapper
 	// there's definitely a better way of doing this, but it should work well enough for now
 	@Override
 	public boolean isTheEnd() { return this.getName().equalsIgnoreCase("the_end"); }
-
-
-
+	@Override
+	public double getCoordinateScale()
+	{
+		return 0;
+	}
+	
+	
+	
 	//================//
 	// base overrides //
 	//================//

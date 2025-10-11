@@ -22,6 +22,9 @@ package com.seibel.distanthorizons.core.config.eventHandlers;
 import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.config.listeners.IConfigListener;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 /**
  * Listens to the config and will automatically
  * clear the current render cache if certain settings are changed. <br> <br>

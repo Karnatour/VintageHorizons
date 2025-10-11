@@ -4,6 +4,7 @@ import com.seibel.distanthorizons.api.interfaces.override.rendering.IDhApiCullin
 import com.seibel.distanthorizons.api.interfaces.override.rendering.IDhApiShadowCullingFrustum;
 import com.seibel.distanthorizons.api.objects.math.DhApiMat4f;
 import com.seibel.distanthorizons.coreapi.interfaces.dependencyInjection.IOverrideInjector;
+import com.seibel.distanthorizons.core.util.math.Mat4f;
 
 /** 
  * Dummy {@link IDhApiCullingFrustum} that allows everything through. <br> 

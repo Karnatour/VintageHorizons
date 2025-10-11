@@ -19,14 +19,14 @@
 
 package com.seibel.distanthorizons.core.util.threading;
 
+import java.lang.ref.WeakReference;
+import java.util.LinkedList;
+import java.util.concurrent.ThreadFactory;
+
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import com.seibel.distanthorizons.core.util.ThreadUtil;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.ref.WeakReference;
-import java.util.LinkedList;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Just a simple ThreadFactory to name ExecutorService

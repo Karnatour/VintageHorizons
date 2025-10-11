@@ -1,6 +1,7 @@
 package com.seibel.distanthorizons.core.multiplayer.client;
 
 import com.seibel.distanthorizons.core.config.Config;
+import com.seibel.distanthorizons.core.config.listeners.ConfigChangeListener;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
 import com.seibel.distanthorizons.core.logging.ConfigBasedLogger;
 import com.seibel.distanthorizons.core.multiplayer.config.SessionConfig;
@@ -10,9 +11,9 @@ import com.seibel.distanthorizons.core.network.event.internal.CloseInternalEvent
 import com.seibel.distanthorizons.core.network.event.internal.IncompatibleMessageInternalEvent;
 import com.seibel.distanthorizons.core.network.messages.base.LevelInitMessage;
 import com.seibel.distanthorizons.core.network.messages.base.SessionConfigMessage;
-import com.seibel.distanthorizons.core.network.messages.fullData.FullDataPartialUpdateMessage;
 import com.seibel.distanthorizons.core.network.messages.fullData.FullDataSourceResponseMessage;
 import com.seibel.distanthorizons.core.network.messages.fullData.FullDataSplitMessage;
+import com.seibel.distanthorizons.core.network.messages.fullData.FullDataPartialUpdateMessage;
 import com.seibel.distanthorizons.core.network.session.NetworkSession;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
 import com.seibel.distanthorizons.coreapi.ModInfo;
@@ -55,6 +56,23 @@ public class ClientNetworkState implements Closeable
 	
 	private long serverTimeOffset = 0;
 	public long getServerTimeOffset() { return this.serverTimeOffset; }
+	
+	private final ClientCongestionControl congestionControl = new ClientCongestionControl(
+			() -> {
+				if (Config.Server.enableAdaptiveTransferSpeed.get())
+				{
+					this.sendConfigMessage(false);
+				}
+			}
+	);
+	private final ConfigChangeListener<Boolean> adaptiveTransferSpeedListener = new ConfigChangeListener<>(Config.Server.enableAdaptiveTransferSpeed, isEnabled -> {
+		if (isEnabled)
+		{
+			this.congestionControl.reset();
+		}
+		
+		this.sendConfigMessage();
+	});
 	
 	
 	
@@ -116,6 +134,7 @@ public class ClientNetworkState implements Closeable
 			});
 			
 			this.networkSession.registerHandler(FullDataSplitMessage.class, this.fullDataPayloadReceiver::receiveChunk);
+			this.networkSession.registerHandler(FullDataSplitMessage.class, this.congestionControl::onPayloadReceived);
 		}
 	}
 	
@@ -127,10 +146,22 @@ public class ClientNetworkState implements Closeable
 	
 	
 	
-	public void sendConfigMessage()
+	public void sendConfigMessage() { this.sendConfigMessage(true); }
+	public void sendConfigMessage(boolean blocking)
 	{
-		this.configReceived = false;
-		this.getSession().sendMessage(new SessionConfigMessage(new SessionConfig()));
+		SessionConfig sessionConfig = new SessionConfig();
+		
+		if (Config.Server.enableAdaptiveTransferSpeed.get())
+		{
+			sessionConfig.constrainValue(Config.Server.playerBandwidthLimit, this.congestionControl.getDesiredRate());
+		}
+		
+		if (blocking)
+		{
+			this.configReceived = false;
+		}
+		
+		this.getSession().sendMessage(new SessionConfigMessage(sessionConfig));
 	}
 	
 	
@@ -166,6 +197,7 @@ public class ClientNetworkState implements Closeable
 	public void close()
 	{
 		this.fullDataPayloadReceiver.close();
+		this.adaptiveTransferSpeedListener.close();
 		this.configAnyChangeListener.close();
 		this.networkSession.close();
 	}

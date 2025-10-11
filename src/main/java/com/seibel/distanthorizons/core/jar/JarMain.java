@@ -19,14 +19,14 @@
 package com.seibel.distanthorizons.core.jar;
 
 
-import com.seibel.distanthorizons.core.jar.gui.BaseJFrame;
-import com.seibel.distanthorizons.core.jar.gui.cusomJObject.JBox;
-import com.seibel.distanthorizons.core.jar.installer.ModrinthGetter;
-import com.seibel.distanthorizons.core.jar.installer.WebDownloader;
 import com.seibel.distanthorizons.core.pos.DhSectionPos;
 import com.seibel.distanthorizons.core.sql.dto.FullDataSourceV2DTO;
 import com.seibel.distanthorizons.core.sql.repo.FullDataSourceV2Repo;
 import com.seibel.distanthorizons.coreapi.ModInfo;
+import com.seibel.distanthorizons.core.jar.gui.BaseJFrame;
+import com.seibel.distanthorizons.core.jar.gui.cusomJObject.JBox;
+import com.seibel.distanthorizons.core.jar.installer.ModrinthGetter;
+import com.seibel.distanthorizons.core.jar.installer.WebDownloader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -34,13 +34,11 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
+import java.io.*;
 import java.net.URL;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**

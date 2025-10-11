@@ -20,9 +20,9 @@
 package com.seibel.distanthorizons.core.config.eventHandlers.presets;
 
 import com.seibel.distanthorizons.api.enums.config.quickOptions.EDhApiThreadPreset;
+import com.seibel.distanthorizons.core.config.listeners.ConfigChangeListener;
 import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.config.ConfigEntryWithPresetOptions;
-import com.seibel.distanthorizons.core.config.listeners.ConfigChangeListener;
 import com.seibel.distanthorizons.coreapi.interfaces.config.IConfigEntry;
 import com.seibel.distanthorizons.coreapi.util.MathUtil;
 import org.apache.logging.log4j.LogManager;

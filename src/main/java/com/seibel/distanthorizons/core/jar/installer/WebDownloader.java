@@ -71,11 +71,11 @@ public class WebDownloader
 			throw new Exception("Content length must not be -1 (unknown)!");
 		}
 		long totalDataRead = 0;
-		try (BufferedInputStream in = new BufferedInputStream(
+		try (java.io.BufferedInputStream in = new java.io.BufferedInputStream(
 				connection.getInputStream()))
 		{
-			FileOutputStream fos = new FileOutputStream(file);
-			try (BufferedOutputStream bout = new BufferedOutputStream(
+			java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+			try (java.io.BufferedOutputStream bout = new BufferedOutputStream(
 					fos, 1024))
 			{
 				byte[] data = new byte[1024];

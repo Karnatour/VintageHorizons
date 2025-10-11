@@ -6,7 +6,6 @@ import com.seibel.distanthorizons.core.file.fullDatafile.FullDataSourceProviderV
 import com.seibel.distanthorizons.core.file.structure.ISaveStructure;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import com.seibel.distanthorizons.core.logging.f3.F3Screen;
-import com.seibel.distanthorizons.core.multiplayer.fullData.FullDataPayload;
 import com.seibel.distanthorizons.core.multiplayer.server.FullDataSourceRequestHandler;
 import com.seibel.distanthorizons.core.multiplayer.server.ServerPlayerState;
 import com.seibel.distanthorizons.core.multiplayer.server.ServerPlayerStateManager;
@@ -17,6 +16,7 @@ import com.seibel.distanthorizons.core.network.messages.AbstractNetworkMessage;
 import com.seibel.distanthorizons.core.network.messages.AbstractTrackableMessage;
 import com.seibel.distanthorizons.core.network.messages.ILevelRelatedMessage;
 import com.seibel.distanthorizons.core.network.messages.fullData.FullDataPartialUpdateMessage;
+import com.seibel.distanthorizons.core.multiplayer.fullData.FullDataPayload;
 import com.seibel.distanthorizons.core.network.messages.fullData.FullDataSourceRequestMessage;
 import com.seibel.distanthorizons.core.network.messages.requests.CancelMessage;
 import com.seibel.distanthorizons.core.pos.DhSectionPos;
@@ -30,8 +30,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.*;
 
 public abstract class AbstractDhServerLevel extends AbstractDhLevel implements IDhServerLevel
 {
@@ -153,7 +152,8 @@ public abstract class AbstractDhServerLevel extends AbstractDhLevel implements I
 				if (Config.Server.generationBoundsRadius.get() > 0)
 				{
 					if (DhSectionPos.getChebyshevSignedBlockDistance(message.sectionPos, new DhBlockPos2D(
-							Config.Server.generationBoundsX.get(), Config.Server.generationBoundsZ.get()
+							serverPlayerState.sessionConfig.getGenerationBoundsX(),
+							serverPlayerState.sessionConfig.getGenerationBoundsZ()
 					)) > Config.Server.generationBoundsRadius.get())
 					{
 						message.sendResponse(new RequestOutOfRangeException("Section out of allowed bounds"));
@@ -261,29 +261,27 @@ public abstract class AbstractDhServerLevel extends AbstractDhLevel implements I
 				}
 				
 				LodUtil.assertTrue(this.beaconBeamRepo != null, "beaconBeamRepo should not be null");
-				try (FullDataPayload payload = new FullDataPayload(data, this.beaconBeamRepo.getAllBeamsForPos(data.getPos())))
+				FullDataPayload payload = new FullDataPayload(data, this.beaconBeamRepo.getAllBeamsForPos(data.getPos()));
+				for (ServerPlayerState serverPlayerState : this.serverPlayerStateManager.getReadyPlayers())
 				{
-					for (ServerPlayerState serverPlayerState : this.serverPlayerStateManager.getReadyPlayers())
+					if (serverPlayerState.getServerPlayer().getLevel() != this.serverLevelWrapper)
 					{
-						if (serverPlayerState.getServerPlayer().getLevel() != this.serverLevelWrapper)
+						continue;
+					}
+					
+					if (!serverPlayerState.sessionConfig.isRealTimeUpdatesEnabled())
+					{
+						continue;
+					}
+					
+					Vec3d playerPosition = serverPlayerState.getServerPlayer().getPosition();
+					int distanceFromPlayer = DhSectionPos.getChebyshevSignedBlockDistance(data.getPos(), new DhBlockPos2D((int) playerPosition.x, (int) playerPosition.z)) / 16;
+					if (distanceFromPlayer <= serverPlayerState.sessionConfig.getMaxUpdateDistanceRadius())
+					{
+						serverPlayerState.fullDataPayloadSender.sendInChunks(payload, () ->
 						{
-							continue;
-						}
-						
-						if (!serverPlayerState.sessionConfig.isRealTimeUpdatesEnabled())
-						{
-							continue;
-						}
-						
-						Vec3d playerPosition = serverPlayerState.getServerPlayer().getPosition();
-						int distanceFromPlayer = DhSectionPos.getChebyshevSignedBlockDistance(data.getPos(), new DhBlockPos2D((int) playerPosition.x, (int) playerPosition.z)) / 16;
-						if (distanceFromPlayer <= serverPlayerState.sessionConfig.getMaxUpdateDistanceRadius())
-						{
-							serverPlayerState.fullDataPayloadSender.sendInChunks(payload, () ->
-							{
-								serverPlayerState.networkSession.sendMessage(new FullDataPartialUpdateMessage(this.serverLevelWrapper, payload));
-							});
-						}
+							serverPlayerState.networkSession.sendMessage(new FullDataPartialUpdateMessage(this.serverLevelWrapper, payload));
+						});
 					}
 				}
 			});
@@ -330,6 +328,8 @@ public abstract class AbstractDhServerLevel extends AbstractDhLevel implements I
 	
 	@Override
 	public int getMinY() { return this.getLevelWrapper().getMinHeight(); }
+	@Override
+	public int getMaxY() { return this.getLevelWrapper().getMaxHeight(); }
 	
 	@Override
 	public IServerLevelWrapper getServerLevelWrapper() { return this.serverLevelWrapper; }

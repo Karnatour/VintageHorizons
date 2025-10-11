@@ -19,10 +19,11 @@
 
 package com.seibel.distanthorizons.core.render.glObject.buffer;
 
-import com.seibel.distanthorizons.api.enums.config.EDhApiGpuUploadMethod;
+import java.nio.ByteBuffer;
+
 import org.lwjgl.opengl.GL32;
 
-import java.nio.ByteBuffer;
+import com.seibel.distanthorizons.api.enums.config.EDhApiGpuUploadMethod;
 
 /**
  * This is a container for a OpenGL

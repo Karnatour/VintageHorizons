@@ -19,11 +19,12 @@
 
 package com.seibel.distanthorizons.core.render.vertexFormat;
 
+import java.util.stream.Collectors;
+
 import com.google.common.collect.ImmutableList;
+
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-
-import java.util.stream.Collectors;
 
 /**
  * This is used to represent a single vertex

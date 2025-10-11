@@ -19,12 +19,24 @@
 
 package com.seibel.distanthorizons.core.jar.gui;
 
-import javax.swing.*;
-import javax.swing.border.Border;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+
+import javax.swing.AbstractButton;
+import javax.swing.DefaultButtonModel;
+import javax.swing.JLabel;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
 
 /**
  * Taken from https://github.com/sshtools/ui/blob/master/src/main/java/com/sshtools/ui/swing/JSwitchBox.java

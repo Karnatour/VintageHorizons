@@ -28,6 +28,7 @@ import com.seibel.distanthorizons.core.jar.installer.GitlabGetter;
 import com.seibel.distanthorizons.core.jar.installer.ModrinthGetter;
 import com.seibel.distanthorizons.core.jar.installer.WebDownloader;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
+import com.seibel.distanthorizons.core.logging.f3.F3Screen;
 import com.seibel.distanthorizons.core.wrapperInterfaces.IVersionConstants;
 import com.seibel.distanthorizons.coreapi.ModInfo;
 import com.seibel.distanthorizons.coreapi.util.StringUtil;
@@ -35,6 +36,8 @@ import com.seibel.distanthorizons.coreapi.util.jar.DeleteOnUnlock;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -108,7 +111,7 @@ public class SelfUpdater
 		}
 		if (!ModrinthGetter.mcVersions.contains(mcVersion))
 		{
-			LOGGER.warn("Minecraft version ["+ mcVersion +"] is not findable on Modrinth, only findable versions are ["+ StringUtil.join(",", ModrinthGetter.mcVersions) +"]");
+			LOGGER.warn("Minecraft version ["+ mcVersion +"] is not findable on Modrinth, only findable versions are ["+ StringUtil.join(", ", ModrinthGetter.mcVersions) +"]");
 			return false;
 		}
 		

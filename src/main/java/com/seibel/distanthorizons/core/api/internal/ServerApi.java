@@ -21,15 +21,15 @@ package com.seibel.distanthorizons.core.api.internal;
 
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiLevelLoadEvent;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiLevelUnloadEvent;
-import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import com.seibel.distanthorizons.core.network.messages.AbstractNetworkMessage;
 import com.seibel.distanthorizons.core.network.messages.MessageRegistry;
 import com.seibel.distanthorizons.core.world.*;
-import com.seibel.distanthorizons.core.wrapperInterfaces.chunk.IChunkWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.misc.IServerPlayerWrapper;
+import com.seibel.distanthorizons.coreapi.DependencyInjection.ApiEventInjector;
+import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
+import com.seibel.distanthorizons.core.wrapperInterfaces.chunk.IChunkWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IServerLevelWrapper;
-import com.seibel.distanthorizons.coreapi.DependencyInjection.ApiEventInjector;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -136,8 +136,8 @@ public class ServerApi
 	// chunk modified events //
 	//=======================//
 	
-	public void serverChunkLoadEvent(IChunkWrapper chunkWrapper, ILevelWrapper level) { SharedApi.INSTANCE.applyChunkUpdate(chunkWrapper, level, false); }
-	public void serverChunkSaveEvent(IChunkWrapper chunkWrapper, ILevelWrapper level) { SharedApi.INSTANCE.applyChunkUpdate(chunkWrapper, level, true); }
+	public void serverChunkLoadEvent(IChunkWrapper chunkWrapper, ILevelWrapper level) { SharedApi.INSTANCE.applyChunkUpdate(chunkWrapper, level, false, false); }
+	public void serverChunkSaveEvent(IChunkWrapper chunkWrapper, ILevelWrapper level) { SharedApi.INSTANCE.applyChunkUpdate(chunkWrapper, level, true, false); }
 	
 	
 	

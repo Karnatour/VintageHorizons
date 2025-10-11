@@ -19,14 +19,14 @@
 
 package com.seibel.distanthorizons.core.wrapperInterfaces.minecraft;
 
+import java.awt.Color;
+
+import com.seibel.distanthorizons.core.wrapperInterfaces.misc.ILightMapWrapper;
+import com.seibel.distanthorizons.coreapi.interfaces.dependencyInjection.IBindable;
 import com.seibel.distanthorizons.core.util.math.Vec3d;
 import com.seibel.distanthorizons.core.util.math.Vec3f;
-import com.seibel.distanthorizons.core.wrapperInterfaces.misc.ILightMapWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
-import com.seibel.distanthorizons.coreapi.interfaces.dependencyInjection.IBindable;
 import org.jetbrains.annotations.Nullable;
-
-import java.awt.*;
 
 /**
  * Contains everything related to
@@ -59,6 +59,9 @@ public interface IMinecraftRenderWrapper extends IBindable
 	
 	int getScreenWidth();
 	int getScreenHeight();
+	
+	boolean mcRendersToFrameBuffer();
+	boolean runningLegacyOpenGL();
 	
 	/** @return -1 if no valid framebuffer is available yet */
 	int getTargetFrameBuffer(); // Note: Iris is now hooking onto this for DH + Iris compat, try not to change (unless we wanna deal with some annoyances)

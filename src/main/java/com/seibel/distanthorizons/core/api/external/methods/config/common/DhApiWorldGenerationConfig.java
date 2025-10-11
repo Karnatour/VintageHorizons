@@ -19,10 +19,10 @@
 
 package com.seibel.distanthorizons.core.api.external.methods.config.common;
 
-import com.seibel.distanthorizons.api.enums.worldGeneration.EDhApiDistantGeneratorMode;
 import com.seibel.distanthorizons.api.interfaces.config.IDhApiConfigValue;
 import com.seibel.distanthorizons.api.interfaces.config.both.IDhApiWorldGenerationConfig;
 import com.seibel.distanthorizons.api.objects.config.DhApiConfigValue;
+import com.seibel.distanthorizons.api.enums.worldGeneration.EDhApiDistantGeneratorMode;
 import com.seibel.distanthorizons.core.config.Config;
 
 /**

@@ -20,11 +20,11 @@
 package com.seibel.distanthorizons.core.api.external.methods.data;
 
 import com.seibel.distanthorizons.api.interfaces.data.IDhApiTerrainDataCache;
-import com.seibel.distanthorizons.api.interfaces.data.IDhApiTerrainDataRepo;
 import com.seibel.distanthorizons.api.interfaces.world.IDhApiLevelWrapper;
 import com.seibel.distanthorizons.api.objects.DhApiResult;
 import com.seibel.distanthorizons.api.objects.data.DhApiRaycastResult;
 import com.seibel.distanthorizons.api.objects.data.DhApiTerrainDataPoint;
+import com.seibel.distanthorizons.api.interfaces.data.IDhApiTerrainDataRepo;
 import com.seibel.distanthorizons.api.objects.math.DhApiVec3i;
 import com.seibel.distanthorizons.core.api.internal.SharedApi;
 import com.seibel.distanthorizons.core.dataObjects.fullData.FullDataPointIdMap;
@@ -38,15 +38,15 @@ import com.seibel.distanthorizons.core.util.DhApiTerrainDataPointUtil;
 import com.seibel.distanthorizons.core.util.FullDataPointUtil;
 import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.util.RayCastUtil;
-import com.seibel.distanthorizons.core.util.math.Vec3d;
 import com.seibel.distanthorizons.core.util.math.Vec3f;
-import com.seibel.distanthorizons.core.util.math.Vec3i;
 import com.seibel.distanthorizons.core.world.AbstractDhWorld;
 import com.seibel.distanthorizons.core.wrapperInterfaces.IWrapperFactory;
 import com.seibel.distanthorizons.core.wrapperInterfaces.chunk.IChunkWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRenderWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import com.seibel.distanthorizons.coreapi.util.BitShiftUtil;
+import com.seibel.distanthorizons.core.util.math.Vec3d;
+import com.seibel.distanthorizons.core.util.math.Vec3i;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -197,10 +197,10 @@ public class DhApiTerrainDataRepo implements IDhApiTerrainDataRepo
 		ILevelWrapper coreLevelWrapper = (ILevelWrapper) levelWrapper;
 		
 		
-		if (!(apiDataCache instanceof DhApiTerrainDataCache))
+		// the data cache can be null, but must be our own implementation
+		if (apiDataCache != null
+			&& !(apiDataCache instanceof DhApiTerrainDataCache))
 		{
-			// custom level wrappers aren't supported,
-			// the API user must get a level wrapper from our code somewhere
 			return DhApiResult.createFail("Unsupported [" + IDhApiTerrainDataCache.class.getSimpleName() + "] implementation, only the core class [" + DhApiTerrainDataCache.class.getSimpleName() + "] is a valid parameter.");
 		}
 		DhApiTerrainDataCache dataCache = (DhApiTerrainDataCache) apiDataCache;
@@ -226,10 +226,9 @@ public class DhApiTerrainDataRepo implements IDhApiTerrainDataRepo
 		// get the data source //
 		//=====================//
 		
+		FullDataSourceV2 dataSource = null;
 		try
 		{
-			FullDataSourceV2 dataSource = null;
-			
 			// try using the cached data if possible
 			if (dataCache != null)
 			{
@@ -244,7 +243,12 @@ public class DhApiTerrainDataRepo implements IDhApiTerrainDataRepo
 				{
 					return DhApiResult.createFail("Unable to find/generate any data at the " + DhSectionPos.class.getSimpleName() + " [" + DhSectionPos.toString(sectionPos) + "].");
 				}
-				dataCache.add(sectionPos, dataSource);
+				
+				// save to the cache if present
+				if (dataCache != null)
+				{
+					dataCache.add(sectionPos, dataSource);
+				}
 			}
 			
 			
@@ -315,6 +319,14 @@ public class DhApiTerrainDataRepo implements IDhApiTerrainDataRepo
 			// shouldn't normally happen, but just in case
 			LOGGER.error("Unexpected exception in getTerrainDataColumnArray. Error: [" + e.getMessage() + "]", e);
 			return DhApiResult.createFail("Unexpected exception: [" + e.getMessage() + "].");
+		}
+		finally
+		{
+			if (dataCache == null
+				&& dataSource != null)
+			{
+				dataSource.close();
+			}
 		}
 	}
 	
@@ -491,7 +503,7 @@ public class DhApiTerrainDataRepo implements IDhApiTerrainDataRepo
 		
 		// this will throw a cast exception if the chunk object array isn't correct
 		IChunkWrapper chunk = SingletonInjector.INSTANCE.get(IWrapperFactory.class).createChunkWrapper(chunkObjectArray);
-		SharedApi.INSTANCE.applyChunkUpdate(chunk, dhLevel.getLevelWrapper(), true);
+		SharedApi.INSTANCE.applyChunkUpdate(chunk, dhLevel.getLevelWrapper(), true, true);
 		
 		
 		return DhApiResult.createSuccess();

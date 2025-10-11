@@ -15,7 +15,7 @@ import java.util.ArrayList;
  * This keeps track of all the poolable
  * arrays that can be retrieved via the {@link PhantomArrayListPool}.
  * 
- * @see PhantomArrayListParent
+ * @see AbstractPhantomArrayList
  * @see PhantomArrayListPool
  */
 public class PhantomArrayListCheckout implements AutoCloseable

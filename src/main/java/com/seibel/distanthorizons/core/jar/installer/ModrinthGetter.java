@@ -20,6 +20,8 @@
 package com.seibel.distanthorizons.core.jar.installer;
 
 import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.json.JsonFormat;
+import com.seibel.distanthorizons.core.jar.updater.SelfUpdater;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import org.apache.logging.log4j.Logger;
 
@@ -37,7 +39,7 @@ public class ModrinthGetter
 	
 	
 	public static final String ModrinthAPI = "https://api.modrinth.com/v2/project/";
-	public static final String projectID = "assets/distanthorizons";
+	public static final String projectID = "distanthorizons";
 	/** Functions should only be accessed once this is true */
 	public static boolean initted = false;
 	public static ArrayList<Config> projectRelease;

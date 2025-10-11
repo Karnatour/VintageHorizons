@@ -85,20 +85,25 @@ public class ChunkHashRepo extends AbstractDhRepo<DhChunkPos, ChunkHashDTO>
 		return dto;
 	}
 	
+	private final String insertSqlTemplate =
+		"INSERT INTO "+this.getTableName() + " (\n" +
+		"   ChunkPosX, ChunkPosZ, \n" +
+		"   ChunkHash, \n" +
+		"   LastModifiedUnixDateTime, CreatedUnixDateTime) \n" +
+		"VALUES( \n" +
+		"    ?, ?, \n" +
+		"    ?, \n" +
+		"    ?, ? \n" +
+		");";
 	@Override
 	public PreparedStatement createInsertStatement(ChunkHashDTO dto) throws SQLException
 	{
-		String sql =
-			"INSERT INTO "+this.getTableName() + " (\n" +
-			"   ChunkPosX, ChunkPosZ, \n" +
-			"   ChunkHash, \n" +
-			"   LastModifiedUnixDateTime, CreatedUnixDateTime) \n" +
-			"VALUES( \n" +
-			"    ?, ?, \n" +
-			"    ?, \n" +
-			"    ?, ? \n" +
-			");";
-		PreparedStatement statement = this.createPreparedStatement(sql);
+		PreparedStatement statement = this.createPreparedStatement(this.insertSqlTemplate);
+		if (statement == null)
+		{
+			return null;
+		}
+		
 		
 		int i = 1;
 		statement.setObject(i++, dto.pos.getX());
@@ -112,16 +117,21 @@ public class ChunkHashRepo extends AbstractDhRepo<DhChunkPos, ChunkHashDTO>
 		return statement;
 	}
 	
+	private final String updateSqlTemplate =
+		"UPDATE "+this.getTableName()+" \n" +
+		"SET \n" +
+		"    ChunkHash = ? \n" +
+		"   ,LastModifiedUnixDateTime = ? \n" +
+		"WHERE ChunkPosX = ? AND ChunkPosZ = ?";
 	@Override
 	public PreparedStatement createUpdateStatement(ChunkHashDTO dto) throws SQLException
 	{
-		String sql =
-			"UPDATE "+this.getTableName()+" \n" +
-			"SET \n" +
-			"    ChunkHash = ? \n" +
-			"   ,LastModifiedUnixDateTime = ? \n" +
-			"WHERE ChunkPosX = ? AND ChunkPosZ = ?";
-		PreparedStatement statement = this.createPreparedStatement(sql);
+		PreparedStatement statement = this.createPreparedStatement(updateSqlTemplate);
+		if (statement == null)
+		{
+			return null;
+		}
+		
 		
 		int i = 1;
 		statement.setObject(i++, dto.chunkHash);

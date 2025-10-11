@@ -52,7 +52,7 @@ public abstract class AbstractDhServerWorld<TDhServerLevel extends AbstractDhSer
 	public void addPlayer(IServerPlayerWrapper serverPlayer)
 	{
 		ServerPlayerState playerState = this.serverPlayerStateManager.registerJoinedPlayer(serverPlayer);
-		this.getLevel(serverPlayer.getLevel()).addPlayer(serverPlayer);
+		((TDhServerLevel) this.getOrLoadServerLevel(serverPlayer.getLevel())).addPlayer(serverPlayer);
 		
 		Iterator<TDhServerLevel> it = this.dhLevelByLevelWrapper.values().stream().distinct().iterator();
 		while (it.hasNext())
@@ -67,7 +67,21 @@ public abstract class AbstractDhServerWorld<TDhServerLevel extends AbstractDhSer
 	@Override
 	public void removePlayer(IServerPlayerWrapper serverPlayer)
 	{
-		this.getLevel(serverPlayer.getLevel()).removePlayer(serverPlayer);
+		IServerLevelWrapper playerLevel = serverPlayer.getLevel();
+		if (playerLevel == null)
+		{
+			// can happen during server shutdown
+			return;
+		}
+		
+		TDhServerLevel serverLevel = this.getLevel(playerLevel);
+		if (serverLevel == null)
+		{
+			// can happen during server shutdown
+			return;
+		}
+		
+		serverLevel.removePlayer(serverPlayer);
 		this.serverPlayerStateManager.unregisterLeftPlayer(serverPlayer);
 		
 		// If player's left, session is already closed

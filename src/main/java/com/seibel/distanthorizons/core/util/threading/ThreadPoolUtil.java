@@ -23,7 +23,7 @@ import com.seibel.distanthorizons.core.util.ThreadUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 /**
  * Holds each thread pool the system uses.
@@ -44,6 +44,10 @@ public class ThreadPoolUtil
 	private static PriorityTaskPicker.Executor fileHandlerThreadPool;
 	@Nullable
 	public static PriorityTaskPicker.Executor getFileHandlerExecutor() { return fileHandlerThreadPool; }
+	
+	private static PriorityTaskPicker.Executor renderSectionLoadThreadPool;
+	@Nullable
+	public static PriorityTaskPicker.Executor getRenderLoadingExecutor() { return renderSectionLoadThreadPool; }
 	
 	private static PriorityTaskPicker.Executor updatePropagatorThreadPool;
 	@Nullable
@@ -89,17 +93,39 @@ public class ThreadPoolUtil
 	
 	public static void setupThreadPools()
 	{
-		// thread pools
+		//==================//
+		// main thread pool //
+		//==================//
+		
+		if (taskPicker != null)
+		{
+			taskPicker.shutdownNow();
+		}
 		taskPicker = new PriorityTaskPicker();
 		
-		networkCompressionThreadPool = taskPicker.createExecutor();
-		fileHandlerThreadPool = taskPicker.createExecutor();
-		chunkToLodBuilderThreadPool = taskPicker.createExecutor();
-		updatePropagatorThreadPool = taskPicker.createExecutor();
-		worldGenThreadPool = taskPicker.createExecutor();
+		networkCompressionThreadPool = taskPicker.createExecutor("Network");
+		fileHandlerThreadPool = taskPicker.createExecutor("IO");
+		renderSectionLoadThreadPool = taskPicker.createExecutor("Render Loader");
+		chunkToLodBuilderThreadPool = taskPicker.createExecutor("LOD Builder");
+		updatePropagatorThreadPool = taskPicker.createExecutor("Update Propagator");
+		worldGenThreadPool = taskPicker.createExecutor("World Gen");
 		
-		// single thread pools
+		
+		
+		//=========================//
+		// standalone thread pools //
+		//=========================//
+		
+		if (beaconCullingThreadPool != null)
+		{
+			beaconCullingThreadPool.shutdown();
+		}
 		beaconCullingThreadPool = ThreadUtil.makeSingleThreadPool(BEACON_CULLING_THREAD_NAME);
+		
+		if (fullDataMigrationThreadPool != null)
+		{
+			fullDataMigrationThreadPool.shutdown();
+		}
 		fullDataMigrationThreadPool = ThreadUtil.makeSingleThreadPool(FULL_DATA_MIGRATION_THREAD_NAME);
 		
 	}
@@ -107,7 +133,7 @@ public class ThreadPoolUtil
 	public static void shutdownThreadPools()
 	{
 		// standalone threads
-		taskPicker.shutdown();
+		taskPicker.shutdownNow();
 		beaconCullingThreadPool.shutdown();
 		fullDataMigrationThreadPool.shutdown();
 	}

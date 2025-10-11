@@ -19,22 +19,16 @@
 
 package com.seibel.distanthorizons.core.dataObjects.render;
 
-import com.seibel.distanthorizons.api.enums.worldGeneration.EDhApiWorldGenerationStep;
-import com.seibel.distanthorizons.core.dataObjects.fullData.sources.FullDataSourceV2;
-import com.seibel.distanthorizons.core.dataObjects.render.columnViews.ColumnArrayView;
-import com.seibel.distanthorizons.core.dataObjects.render.columnViews.ColumnQuadView;
-import com.seibel.distanthorizons.core.dataObjects.transformers.FullDataToRenderDataTransformer;
-import com.seibel.distanthorizons.core.file.IDataSource;
-import com.seibel.distanthorizons.core.level.IDhClientLevel;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
-import com.seibel.distanthorizons.core.pooling.PhantomArrayListParent;
+import com.seibel.distanthorizons.core.pooling.AbstractPhantomArrayList;
 import com.seibel.distanthorizons.core.pooling.PhantomArrayListPool;
 import com.seibel.distanthorizons.core.pos.DhSectionPos;
-import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos2D;
+import com.seibel.distanthorizons.coreapi.ModInfo;
+import com.seibel.distanthorizons.core.dataObjects.render.columnViews.ColumnArrayView;
+import com.seibel.distanthorizons.core.dataObjects.render.columnViews.ColumnQuadView;
+import com.seibel.distanthorizons.coreapi.util.BitShiftUtil;
 import com.seibel.distanthorizons.core.util.ColorUtil;
 import com.seibel.distanthorizons.core.util.RenderDataPointUtil;
-import com.seibel.distanthorizons.coreapi.ModInfo;
-import com.seibel.distanthorizons.coreapi.util.BitShiftUtil;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.apache.logging.log4j.Logger;
 
@@ -45,9 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @see RenderDataPointUtil
  */
-public class ColumnRenderSource
-		extends PhantomArrayListParent
-		implements IDataSource<IDhClientLevel>
+public class ColumnRenderSource extends AbstractPhantomArrayList
 {
 	private static final Logger LOGGER = DhLoggerBuilder.getLogger();
 	
@@ -133,80 +125,12 @@ public class ColumnRenderSource
 	
 	
 	
-	//=============//
-	// data update //
-	//=============//
-	
-	@Override
-	public boolean update(FullDataSourceV2 inputFullDataSource, IDhClientLevel level)
-	{
-		final String errorMessagePrefix = "Unable to complete update for RenderSource pos: [" + this.pos + "] and pos: [" + inputFullDataSource.getPos() + "]. Error:";
-		
-		boolean dataChanged = false;
-		if (DhSectionPos.getDetailLevel(inputFullDataSource.getPos()) == DhSectionPos.getDetailLevel(this.pos))
-		{
-			try
-			{
-				if (Thread.interrupted())
-				{
-					LOGGER.warn(errorMessagePrefix + "write interrupted.");
-					return false;
-				}
-				
-				
-				
-				DhBlockPos2D centerBlockPos = DhSectionPos.getCenterBlockPos(inputFullDataSource.getPos());
-				int halfBlockWidth = DhSectionPos.getBlockWidth(inputFullDataSource.getPos()) / 2;
-				DhBlockPos2D minBlockPos = new DhBlockPos2D(centerBlockPos.x - halfBlockWidth, centerBlockPos.z - halfBlockWidth);
-				
-				for (int x = 0; x < FullDataSourceV2.WIDTH; x++)
-				{
-					for (int z = 0; z < FullDataSourceV2.WIDTH; z++)
-					{
-						ColumnArrayView columnArrayView = this.getVerticalDataPointView(x, z);
-						int columnHash = columnArrayView.getDataHash();
-						
-						LongArrayList dataColumn = inputFullDataSource.get(x, z);
-						EDhApiWorldGenerationStep worldGenStep = inputFullDataSource.getWorldGenStepAtRelativePos(x, z);
-						if (dataColumn != null && worldGenStep != EDhApiWorldGenerationStep.EMPTY)
-						{
-							FullDataToRenderDataTransformer.updateOrReplaceRenderDataViewColumnWithFullDataColumn(
-									level, inputFullDataSource.mapping,
-									minBlockPos.x + x,
-									minBlockPos.z + z,
-									columnArrayView, dataColumn);
-							dataChanged |= columnHash != columnArrayView.getDataHash();
-							
-							this.fillDebugFlag(x, z, 1, 1, DebugSourceFlag.DIRECT);
-						}
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				LOGGER.error(errorMessagePrefix + e.getMessage(), e);
-			}
-		}
-		
-		if (dataChanged)
-		{
-			this.localVersion.incrementAndGet();
-			this.markNotEmpty();
-		}
-		
-		return dataChanged;
-	}
-	
-	
-	
 	//=====================//
 	// data helper methods //
 	//=====================//
 	
 	public Long getPos() { return this.pos; }
-	@Override
 	public Long getKey() { return this.pos; }
-	@Override
 	public String getKeyDisplayString() { return DhSectionPos.toString(this.pos); }
 	
 	public byte getDataDetailLevel() { return (byte) (DhSectionPos.getDetailLevel(this.pos) - SECTION_SIZE_OFFSET); }

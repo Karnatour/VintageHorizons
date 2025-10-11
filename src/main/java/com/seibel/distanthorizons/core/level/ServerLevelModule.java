@@ -49,7 +49,7 @@ public class ServerLevelModule implements AutoCloseable
 		this.parentServerLevel = parentServerLevel;
 		this.saveStructure = saveStructure;
 		this.fullDataFileHandler = new GeneratedFullDataSourceProvider(parentServerLevel, saveStructure);
-		this.worldGenModule = new WorldGenModule(this.parentServerLevel, this.fullDataFileHandler, () -> new WorldGenState(this.parentServerLevel));
+		this.worldGenModule = new WorldGenModule(this.parentServerLevel, this.fullDataFileHandler, () -> new ServerLevelModule.WorldGenState(this.parentServerLevel));
 	}
 	
 	
@@ -85,7 +85,7 @@ public class ServerLevelModule implements AutoCloseable
 				// since core world generator's should have the lowest override priority
 				WorldGeneratorInjector.INSTANCE.bind(level.getLevelWrapper(), worldGenerator);
 			}
-			this.worldGenerationQueue = new WorldGenerationQueue(worldGenerator);
+			this.worldGenerationQueue = new WorldGenerationQueue(worldGenerator, level);
 		}
 		
 	}

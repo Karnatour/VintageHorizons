@@ -6,6 +6,7 @@ import com.seibel.distanthorizons.common.wrappers.block.BiomeWrapper;
 import com.seibel.distanthorizons.common.wrappers.block.BlockStateWrapper;
 import com.seibel.distanthorizons.common.wrappers.block.ClientBlockStateColorCache;
 import com.seibel.distanthorizons.common.wrappers.chunk.ChunkWrapper;
+import com.seibel.distanthorizons.core.dataObjects.fullData.sources.FullDataSourceV2;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
 import com.seibel.distanthorizons.core.level.*;
 import com.seibel.distanthorizons.core.level.IServerKeyedClientLevel;
@@ -145,22 +146,21 @@ public class ClientLevelWrapper implements IClientLevelWrapper
 			return null;
 		}
 	}
+	@Override
+	public int getBlockColor(DhBlockPos pos, IBiomeWrapper biome, FullDataSourceV2 fullDataSource, IBlockStateWrapper blockState)
+	{
+		ClientBlockStateColorCache blockColorCache = this.blockCache.computeIfAbsent(
+				((BlockStateWrapper) blockState).blockState,
+				(block) -> new ClientBlockStateColorCache(block, this, pos));
+		
+		return blockColorCache.getColor((BiomeWrapper) biome, pos, this);
+	}
 	
 	
 	
 	//====================//
 	// base level methods //
 	//====================//
-	
-	@Override
-	public int getBlockColor(DhBlockPos pos, IBiomeWrapper biome, IBlockStateWrapper blockWrapper)
-	{
-		ClientBlockStateColorCache blockColorCache = this.blockCache.computeIfAbsent(
-				((BlockStateWrapper) blockWrapper).blockState,
-				(block) -> new ClientBlockStateColorCache(block, this, pos));
-		
-		return blockColorCache.getColor((BiomeWrapper) biome, pos, this);
-	}
 	
 	@Override
 	public int getDirtBlockColor()
@@ -174,12 +174,19 @@ public class ClientLevelWrapper implements IClientLevelWrapper
 			catch (IOException e)
 			{
 				// shouldn't happen, but just in case
-				LOGGER.warn("Unable to get dirt color with resource location [" + BlockStateWrapper.DIRT_RESOURCE_LOCATION_STRING + "] with level [" + this + "].", e);
+				LOGGER.warn("Unable to get dirt color with resource location ["+BlockStateWrapper.DIRT_RESOURCE_LOCATION_STRING+"] with level ["+this+"].", e);
 				return -1;
 			}
 		}
 		
-		return this.getBlockColor(DhBlockPos.ZERO, BiomeWrapper.EMPTY_WRAPPER, this.dirtBlockWrapper);
+		return this.getBlockColor(DhBlockPos.ZERO, BiomeWrapper.EMPTY_WRAPPER, null, this.dirtBlockWrapper);
+	}
+
+	
+	@Override
+	public int getWaterBlockColor()
+	{
+		return 0;
 	}
 	
 	@Override

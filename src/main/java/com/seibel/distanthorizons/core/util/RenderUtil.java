@@ -24,15 +24,13 @@ import com.seibel.distanthorizons.core.api.internal.SharedApi;
 import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
 import com.seibel.distanthorizons.core.level.IDhClientLevel;
-import com.seibel.distanthorizons.core.util.math.Mat4f;
 import com.seibel.distanthorizons.core.world.IDhClientWorld;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRenderWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
-import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 import com.seibel.distanthorizons.coreapi.util.MathUtil;
-import com.seibel.distanthorizons.forge.ForgeMain;
-import net.minecraftforge.fml.common.Loader;
+import com.seibel.distanthorizons.core.util.math.Mat4f;
+import com.seibel.distanthorizons.core.wrapperInterfaces.world.ILevelWrapper;
 
 /**
  * This holds miscellaneous helper code
@@ -88,21 +86,15 @@ public class RenderUtil
 		return mcModelViewMat.copy();
 	}
 	
-	public static float getNearClipPlaneDistanceInBlocks(float partialTicks)
-	{
+	public static float getNearClipPlaneDistanceInBlocks(float partialTicks) 
+	{ 
 		// 0.2 should provide a decent distance so the clip plane isn't visible
 		// but far enough the fading will rarely overlap (IE only at extreme FOV)
-		//TODO Move somewhere else
-		if (ForgeMain.IS_LUCRAFT_LOADED)
-		{
-			return getNearClipPlaneDistanceInBlocks(partialTicks, 0.04f);
-		}
-		else
-		{
-			return getNearClipPlaneDistanceInBlocks(partialTicks, 0.2f);
-		}
+		return getNearClipPlaneDistanceInBlocks(partialTicks, 0.2f); 
 	}
-	public static float getNearClipPlaneInBlocksForFading(float partialTicks)
+	/** TODO this should be moved into the config file or something, this is confusing and obtuse to use */
+	@Deprecated
+	public static float getAutoOverdrawPrevention()
 	{
 		float overdraw = Config.Client.Advanced.Graphics.Culling.overdrawPrevention.get().floatValue();
 		
@@ -133,6 +125,11 @@ public class RenderUtil
 			}
 		}
 		
+		return overdraw;
+	}
+	public static float getNearClipPlaneInBlocksForFading(float partialTicks)
+	{
+		float overdraw = getAutoOverdrawPrevention();
 		return getNearClipPlaneDistanceInBlocks(partialTicks, overdraw);
 	}
 	private static float getNearClipPlaneDistanceInBlocks(float partialTicks, float overdrawPreventionPercent)
@@ -152,7 +149,7 @@ public class RenderUtil
 			//  If the player is moving quickly they are less likely to notice overdraw.
 			
 			nearClipPlane = vanillaBlockRenderedDistance;
-			nearClipPlane *= overdrawPreventionPercent;
+			nearClipPlane *= overdrawPreventionPercent; 
 			
 			// the near clip plane should never be closer than 1/10th of a block,
 			// otherwise Z-fighting and other issues may occur
@@ -233,6 +230,9 @@ public class RenderUtil
 			return "No Client World Loaded";
 		}
 		
+		// TODO changing to getOrLoadClientLevel() fixes Immersive Portals only rendering the level the user starts in
+		//  however this may break how other level handling is done so James doesn't want to change it.
+		//  Special handling may be necessary when Immersive Portals is present, although additional testing is needed.
 		IDhClientLevel level = clientWorld.getClientLevel(levelWrapper);
 		if (level == null)
 		{
@@ -244,8 +244,8 @@ public class RenderUtil
 			return "No Lightmap loaded";
 		}
 		
-		if (renderEventParam.dhModelViewMatrix == null
-				|| renderEventParam.mcModelViewMatrix == null)
+		if (renderEventParam.dhModelViewMatrix == null 
+			|| renderEventParam.mcModelViewMatrix == null)
 		{
 			return "No MVM or Proj Matrix Given";
 		}

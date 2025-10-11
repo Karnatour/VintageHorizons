@@ -3,6 +3,7 @@ package com.seibel.distanthorizons;
 import com.seibel.distanthorizons.common.wrappers.McObjectConverter;
 import com.seibel.distanthorizons.common.wrappers.world.ClientLevelWrapper;
 import com.seibel.distanthorizons.core.api.internal.ClientApi;
+import com.seibel.distanthorizons.core.api.internal.rendering.RenderState;
 import com.seibel.distanthorizons.core.util.math.Mat4f;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import net.minecraft.client.Minecraft;
@@ -34,10 +35,15 @@ public class RenderHelper {
 		Mat4f mcModelViewMatrix = McObjectConverter.Convert(rawModelView);
 		Mat4f mcProjectionMatrix = McObjectConverter.Convert(rawProjection);
 		
-		float frameTime = Minecraft.getMinecraft().timer.renderPartialTicks;
-		IClientLevelWrapper levelWrapper = ClientLevelWrapper.getWrapper(Minecraft.getMinecraft().world);
 		
-		ClientApi.INSTANCE.renderLods(levelWrapper, mcModelViewMatrix, mcProjectionMatrix, frameTime);
+		ClientApi.RENDER_STATE.mcModelViewMatrix = mcModelViewMatrix;
+		ClientApi.RENDER_STATE.mcProjectionMatrix = mcProjectionMatrix;
+		
+		float frameTime = Minecraft.getMinecraft().timer.renderPartialTicks;
+		ClientApi.RENDER_STATE.clientLevelWrapper = ClientLevelWrapper.getWrapper(Minecraft.getMinecraft().world);
+		ClientApi.RENDER_STATE.frameTime = frameTime;
+		
+		ClientApi.INSTANCE.renderLods();
 		
 		GL32.glDepthFunc(depthFunc);
 		

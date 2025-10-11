@@ -8,10 +8,7 @@ import com.seibel.distanthorizons.core.network.INetworkObject;
 import io.netty.buffer.ByteBuf;
 
 import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -21,7 +18,7 @@ public class SessionConfig implements INetworkObject
 	private static final LinkedHashMap<String, Entry> CONFIG_ENTRIES = new LinkedHashMap<>();
 	
 	
-	private final LinkedHashMap<String, Object> values = new LinkedHashMap<>();
+	private final HashMap<String, Object> values = new HashMap<>();
 	public SessionConfig constrainingConfig;
 	
 	
@@ -36,9 +33,9 @@ public class SessionConfig implements INetworkObject
 		
 		registerConfigEntry(Config.Common.WorldGenerator.enableDistantGeneration, Boolean::logicalAnd);
 		registerConfigEntry(Config.Server.maxGenerationRequestDistance, Math::min);
-		registerConfigEntry(Config.Server.generationBoundsX, (x, y) -> x);
-		registerConfigEntry(Config.Server.generationBoundsZ, (x, y) -> x);
-		registerConfigEntry(Config.Server.generationBoundsRadius, (x, y) -> x);
+		registerConfigEntry(Config.Server.generationBoundsX, (x, y) -> y);
+		registerConfigEntry(Config.Server.generationBoundsZ, (x, y) -> y);
+		registerConfigEntry(Config.Server.generationBoundsRadius, (x, y) -> y);
 		registerConfigEntry(Config.Server.generationRequestRateLimit, Math::min);
 		
 		registerConfigEntry(Config.Server.enableRealTimeUpdates, Boolean::logicalAnd);
@@ -48,7 +45,7 @@ public class SessionConfig implements INetworkObject
 		registerConfigEntry(Config.Server.maxSyncOnLoadRequestDistance, Math::min);
 		registerConfigEntry(Config.Server.syncOnLoadRateLimit, Math::min);
 		
-		registerConfigEntry(Config.Server.maxDataTransferSpeed, (x, y) -> {
+		registerConfigEntry(Config.Server.playerBandwidthLimit, (x, y) -> {
 			if (x == 0 && y == 0)
 			{
 				return 0;
@@ -83,7 +80,7 @@ public class SessionConfig implements INetworkObject
 	public int getMaxSyncOnLoadDistance() { return this.getValue(Config.Server.maxSyncOnLoadRequestDistance); }
 	public int getSyncOnLoginRateLimit() { return this.getValue(Config.Server.syncOnLoadRateLimit); }
 	
-	public int getMaxDataTransferSpeed() { return this.getValue(Config.Server.maxDataTransferSpeed); }
+	public int getPlayerBandwidthLimit() { return this.getValue(Config.Server.playerBandwidthLimit); }
 	
 	
 	
@@ -122,8 +119,15 @@ public class SessionConfig implements INetworkObject
 		}
 		
 		return (this.constrainingConfig != null
-				? (T) entry.valueConstrainer.apply(value, this.constrainingConfig.getValue(name))
+				? (T) entry.valueConstrainer.apply(this.constrainingConfig.getValue(name), value)
 				: value);
+	}
+	
+	public <T> void constrainValue(ConfigEntry<T> configEntry, T value) { this.constrainValue(configEntry.getChatCommandName(), value); }
+	private void constrainValue(String name, Object value)
+	{
+		Entry entry = CONFIG_ENTRIES.get(name);
+		this.values.put(name, entry.valueConstrainer.apply(this.getValue(name), value));
 	}
 	
 	private Map<String, ?> getValues()

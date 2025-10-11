@@ -19,16 +19,16 @@
 
 package com.seibel.distanthorizons.core.logging;
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SpamReducedLogger
 {
@@ -56,6 +56,11 @@ public class SpamReducedLogger
 		loggers.add(new WeakReference<SpamReducedLogger>(this));
 	}
 	
+	private static boolean isLessSpecificThan(Level _this, Level other)
+	{
+		return _this.intLevel() >= other.intLevel();
+	}
+	
 	public void reset()
 	{
 		logTries.set(0);
@@ -70,7 +75,7 @@ public class SpamReducedLogger
 	{
 		if (logTries.get() >= maxLogCount)
 			return;
-		LOGGER.log(Level.INFO.isMoreSpecificThan(level) ? Level.INFO : level, str, param);
+		LOGGER.log(isLessSpecificThan(level, Level.INFO) ? Level.INFO : level, str, param);
 	}
 	
 	public void error(String str, Object... param)
@@ -107,7 +112,7 @@ public class SpamReducedLogger
 	{
 		if (logTries.getAndIncrement() >= maxLogCount)
 			return;
-		LOGGER.log(Level.INFO.isMoreSpecificThan(level) ? Level.INFO : level, str, param);
+		LOGGER.log(isLessSpecificThan(level, Level.INFO) ? Level.INFO : level, str, param);
 	}
 	
 	public void errorInc(String str, Object... param)

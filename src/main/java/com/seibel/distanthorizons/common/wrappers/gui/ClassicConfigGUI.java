@@ -289,7 +289,7 @@ public class ClassicConfigGUI
 		@Override
 		public void onGuiClosed()
 		{
-			ConfigBase.INSTANCE.configFileINSTANCE.saveToFile();
+			//ConfigBase.INSTANCE.configFileINSTANCE.saveToFile();
 			//Minecraft.getMinecraft().displayGuiScreen(this.parent);
 			
 			CONFIG_CORE_INTERFACE.onScreenChangeListenerList.forEach((listener) -> listener.run());
@@ -301,7 +301,7 @@ public class ClassicConfigGUI
 			super.initGui();
 			if (!reload)
 			{
-				ConfigBase.INSTANCE.configFileINSTANCE.loadFromFile();
+				//ConfigBase.INSTANCE.configFileINSTANCE.loadFromFile();
 			}
 
             /*
@@ -338,11 +338,11 @@ public class ClassicConfigGUI
 					150, 20,
 					button ->
 					{
-						ConfigBase.INSTANCE.configFileINSTANCE.loadFromFile();
+						//ConfigBase.INSTANCE.configFileINSTANCE.loadFromFile();
 						Minecraft.getMinecraft().displayGuiScreen(parent);
 					}));
 			doneButton = addBtn(MakeBtn(Translatable("distanthorizons.general.done"), this.width / 2 + 4, this.height - 28, 150, 20, (button) -> {
-				ConfigBase.INSTANCE.configFileINSTANCE.saveToFile();
+				//ConfigBase.INSTANCE.configFileINSTANCE.saveToFile();
 				Minecraft.getMinecraft().displayGuiScreen(parent);
 			}));
 			
@@ -425,7 +425,7 @@ public class ClassicConfigGUI
 			if (ConfigCategory.class.isAssignableFrom(info.getClass()))
 			{
 				GuiButton widget = MakeBtn(name, this.width / 2 - 100, this.height - 28, 100 * 2, 20, (button -> {
-					ConfigBase.INSTANCE.configFileINSTANCE.saveToFile();
+					//ConfigBase.INSTANCE.configFileINSTANCE.saveToFile();
 					Minecraft.getMinecraft().displayGuiScreen(ClassicConfigGUI.getScreen(this.configBase, this, ((ConfigCategory) info).getDestination()));
 				}));
 				this.list.addButton(widget, null, null, null);

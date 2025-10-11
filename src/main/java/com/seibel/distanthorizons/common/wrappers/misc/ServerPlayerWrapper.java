@@ -76,16 +76,6 @@ public class ServerPlayerWrapper implements IServerPlayerWrapper
         return new Vec3d(position.posX, position.posY, position.posZ);
     }
 
-    @Override
-    public int getViewDistance() { return this.getServerPlayer().server.getPlayerList().getViewDistance(); }
-
-    @Override
-    public SocketAddress getRemoteAddress()
-    {
-        return this.getServerPlayer().connection.getNetworkManager().getRemoteAddress();
-    }
-
-
 
     //================//
     // base overrides //

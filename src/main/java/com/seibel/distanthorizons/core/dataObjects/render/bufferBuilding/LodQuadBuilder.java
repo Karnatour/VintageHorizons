@@ -19,6 +19,11 @@
 
 package com.seibel.distanthorizons.core.dataObjects.render.bufferBuilding;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.seibel.distanthorizons.api.enums.config.EDhApiGrassSideRendering;
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiBlockMaterial;
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiDebugRendering;
@@ -26,17 +31,15 @@ import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
 import com.seibel.distanthorizons.core.enums.EDhDirection;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
+import com.seibel.distanthorizons.core.render.glObject.buffer.GLVertexBuffer;
 import com.seibel.distanthorizons.core.util.ColorUtil;
+import com.seibel.distanthorizons.api.enums.config.EDhApiGpuUploadMethod;
+import com.seibel.distanthorizons.core.wrapperInterfaces.block.IBlockStateWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import com.seibel.distanthorizons.coreapi.util.MathUtil;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.system.MemoryUtil;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.ListIterator;
-import java.util.Objects;
 
 /**
  * Used to create the quads before they are converted to render-able buffers. <br><br>
@@ -170,19 +173,6 @@ public class LodQuadBuilder
 		BufferQuad quad = new BufferQuad(minX, maxY, minZ, widthEastWest, widthNorthSouthOrUpDown, color, irisBlockMaterialId, skylight, blocklight, EDhDirection.UP);
 		boolean isTransparent = (this.doTransparency && ColorUtil.getAlpha(color) < 255);
 		ArrayList<BufferQuad> quadList = isTransparent ? this.transparentQuads[EDhDirection.UP.ordinal()] : this.opaqueQuads[EDhDirection.UP.ordinal()];
-		
-		
-		// attempt to merge this quad with adjacent ones
-		if (!quadList.isEmpty() &&
-				(
-					quadList.get(quadList.size() - 1).tryMerge(quad, BufferMergeDirectionEnum.EastWest)
-					|| quadList.get(quadList.size() - 1).tryMerge(quad, BufferMergeDirectionEnum.NorthSouthOrUpDown))
-			)
-		{
-			this.premergeCount++;
-			return;
-		}
-		
 		quadList.add(quad);
 	}
 	
@@ -191,14 +181,6 @@ public class LodQuadBuilder
 		BufferQuad quad = new BufferQuad(x, y, z, width, wz, color, irisBlockMaterialId, skylight, blocklight, EDhDirection.DOWN);
 		ArrayList<BufferQuad> qs = (doTransparency && ColorUtil.getAlpha(color) < 255)
 				? transparentQuads[EDhDirection.DOWN.ordinal()] : opaqueQuads[EDhDirection.DOWN.ordinal()];
-		if (!qs.isEmpty()
-				&& (qs.get(qs.size() - 1).tryMerge(quad, BufferMergeDirectionEnum.EastWest)
-						|| qs.get(qs.size() - 1).tryMerge(quad, BufferMergeDirectionEnum.NorthSouthOrUpDown))
-			)
-		{
-			premergeCount++;
-			return;
-		}
 		qs.add(quad);
 	}
 	
@@ -207,9 +189,6 @@ public class LodQuadBuilder
 	//=================//
 	// data finalizing //
 	//=================//
-	
-	/** runs any final data cleanup, merging, etc. */
-	public void finalizeData() { this.mergeQuads(); }
 	
 	/** Uses Greedy meshing to merge this builder's Quads. */
 	public void mergeQuads()
@@ -249,7 +228,9 @@ public class LodQuadBuilder
 	private static long mergeQuadsInternal(ArrayList<BufferQuad>[] list, int directionIndex, BufferMergeDirectionEnum mergeDirection)
 	{
 		if (list[directionIndex].size() <= 1)
+		{
 			return 0;
+		}
 		
 		list[directionIndex].sort((objOne, objTwo) -> objOne.compare(objTwo, mergeDirection));
 		

@@ -19,6 +19,11 @@
 
 package com.seibel.distanthorizons.core.util;
 
+import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
+import com.seibel.distanthorizons.core.wrapperInterfaces.modAccessor.AbstractOptifineAccessor;
+import org.apache.logging.log4j.Logger;
+
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 
 public class ReflectionUtil

@@ -19,9 +19,15 @@
 
 package com.seibel.distanthorizons.core.jar.gui;
 
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.beans.ConstructorProperties;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+
 import javax.swing.*;
 import javax.swing.plaf.ButtonUI;
-import java.beans.ConstructorProperties;
 
 /**
  * A switch button cus Java dosnt have one

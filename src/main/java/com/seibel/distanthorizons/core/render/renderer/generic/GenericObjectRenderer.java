@@ -23,11 +23,9 @@ import com.seibel.distanthorizons.api.enums.config.EDhApiGpuUploadMethod;
 import com.seibel.distanthorizons.api.enums.config.EDhApiLoggerMode;
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiBlockMaterial;
 import com.seibel.distanthorizons.api.interfaces.override.rendering.IDhApiGenericObjectShaderProgram;
-import com.seibel.distanthorizons.api.interfaces.render.IDhApiCustomRenderRegister;
 import com.seibel.distanthorizons.api.interfaces.render.IDhApiRenderableBoxGroup;
-import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBeforeGenericObjectRenderEvent;
-import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBeforeGenericRenderCleanupEvent;
-import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBeforeGenericRenderSetupEvent;
+import com.seibel.distanthorizons.api.interfaces.render.IDhApiCustomRenderRegister;
+import com.seibel.distanthorizons.api.methods.events.abstractEvents.*;
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiRenderParam;
 import com.seibel.distanthorizons.api.objects.math.DhApiVec3d;
 import com.seibel.distanthorizons.api.objects.render.DhApiRenderableBox;
@@ -43,10 +41,10 @@ import com.seibel.distanthorizons.core.render.glObject.GLProxy;
 import com.seibel.distanthorizons.core.render.glObject.buffer.GLElementBuffer;
 import com.seibel.distanthorizons.core.render.glObject.buffer.GLVertexBuffer;
 import com.seibel.distanthorizons.core.util.LodUtil;
-import com.seibel.distanthorizons.core.util.math.Vec3d;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftGLWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftRenderWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IProfilerWrapper;
+import com.seibel.distanthorizons.core.util.math.Vec3d;
 import com.seibel.distanthorizons.core.wrapperInterfaces.modAccessor.ISodiumAccessor;
 import com.seibel.distanthorizons.coreapi.DependencyInjection.ApiEventInjector;
 import com.seibel.distanthorizons.coreapi.DependencyInjection.OverrideInjector;
@@ -60,8 +58,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.awt.*;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -78,6 +75,8 @@ public class GenericObjectRenderer implements IDhApiCustomRenderRegister
 	private static final IMinecraftRenderWrapper MC_RENDER = SingletonInjector.INSTANCE.get(IMinecraftRenderWrapper.class);
 	private static final ISodiumAccessor SODIUM = ModAccessorInjector.INSTANCE.get(ISodiumAccessor.class);
 	private static final IMinecraftGLWrapper GLMC = SingletonInjector.INSTANCE.get(IMinecraftGLWrapper.class);
+	
+	private static final DhApiRenderableBoxGroupShading DEFAULT_SHADING = DhApiRenderableBoxGroupShading.getUnshaded();
 	
 	/** 
 	 * Can be used to troubleshoot the renderer. 
@@ -522,13 +521,13 @@ public class GenericObjectRenderer implements IDhApiCustomRenderRegister
 	{
 		// update instance data //
 		
-		profiler.push("setup");
+		profiler.push("vertex setup");
 		boxGroup.updateVertexAttributeData();
 		
 		DhApiRenderableBoxGroupShading shading = boxGroup.shading;
 		if (shading == null)
 		{
-			shading = DhApiRenderableBoxGroupShading.getUnshaded();
+			shading = DEFAULT_SHADING;
 		}
 		
 		shaderProgram.fillIndirectUniformData(
@@ -539,6 +538,7 @@ public class GenericObjectRenderer implements IDhApiCustomRenderRegister
 		
 		
 		// Bind instance data //
+		profiler.popPush("binding");
 		
 		GL32.glBindBuffer(GL32.GL_ARRAY_BUFFER, boxGroup.instanceColorVbo);
 		GL32.glEnableVertexAttribArray(1);

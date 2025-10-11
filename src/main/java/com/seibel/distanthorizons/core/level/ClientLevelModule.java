@@ -30,8 +30,8 @@ import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos2D;
 import com.seibel.distanthorizons.core.render.LodQuadTree;
 import com.seibel.distanthorizons.core.render.RenderBufferHandler;
-import com.seibel.distanthorizons.core.render.renderer.LodRenderer;
 import com.seibel.distanthorizons.core.render.renderer.generic.GenericObjectRenderer;
+import com.seibel.distanthorizons.core.render.renderer.LodRenderer;
 import com.seibel.distanthorizons.core.util.LodUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IProfilerWrapper;
@@ -258,7 +258,11 @@ public class ClientLevelModule implements Closeable, AbstractDataSourceHandler.I
 	
 	public void clearRenderCache()
 	{
-		this.clientLevel.getClientLevelWrapper().clearBlockColorCache();
+		IClientLevelWrapper clientLevelWrapper = this.clientLevel.getClientLevelWrapper();
+		if (clientLevelWrapper != null)
+		{
+			clientLevelWrapper.clearBlockColorCache();
+		}
 		
 		ClientRenderState ClientRenderState = this.ClientRenderStateRef.get();
 		if (ClientRenderState != null && ClientRenderState.quadtree != null)

@@ -37,6 +37,7 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -222,7 +223,7 @@ public class GLBuffer implements AutoCloseable
 		this.destroyAsync();
 		this.create(true);
 		this.bind();
-		GL44.glBufferStorage(this.getBufferBindingTarget(), bb, bufferStorageHint);
+		GL44.glBufferStorage(this.getBufferBindingTarget(), bb, 0);
 		this.size = bbSize;
 	}
 	/** Requires the buffer to be bound */

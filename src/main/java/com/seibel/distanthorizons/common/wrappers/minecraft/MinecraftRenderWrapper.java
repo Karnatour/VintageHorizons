@@ -159,9 +159,19 @@ public class MinecraftRenderWrapper implements IMinecraftRenderWrapper
     {
         return MC.displayHeight;
     }
-
-
-    @Override
+	@Override
+	public boolean mcRendersToFrameBuffer()
+	{
+		return false;
+	}
+	@Override
+	public boolean runningLegacyOpenGL()
+	{
+		return false;
+	}
+	
+	
+	@Override
     public int getTargetFrameBuffer()
     {
         return Minecraft.getMinecraft().getFramebuffer().framebufferObject;

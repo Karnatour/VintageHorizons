@@ -25,6 +25,7 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.block.IBlockStateWrappe
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IProfilerWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IBiomeWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
+import org.jetbrains.annotations.Nullable;
 
 public interface IDhClientLevel extends IDhLevel
 {
@@ -33,8 +34,7 @@ public interface IDhClientLevel extends IDhLevel
 	void render(DhApiRenderParam renderEventParam, IProfilerWrapper profiler);
 	void renderDeferred(DhApiRenderParam renderEventParam, IProfilerWrapper profiler);
 	
-	int computeBaseColor(DhBlockPos pos, IBiomeWrapper biome, IBlockStateWrapper block);
-	
+	@Nullable
 	IClientLevelWrapper getClientLevelWrapper();
 	
 	/**

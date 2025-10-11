@@ -9,6 +9,7 @@ import com.seibel.distanthorizons.core.sql.dto.FullDataSourceV1DTO;
 import com.seibel.distanthorizons.core.sql.repo.AbstractDhRepo;
 import com.seibel.distanthorizons.core.sql.repo.FullDataSourceV1Repo;
 import com.seibel.distanthorizons.core.util.objects.DataCorruptedException;
+import com.seibel.distanthorizons.core.util.objects.dataStreams.DhDataInputStream;
 import com.seibel.distanthorizons.core.util.threading.ThreadPoolUtil;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.apache.logging.log4j.Logger;
@@ -78,7 +79,10 @@ public class FullDataSourceProviderV1<TDhLevel extends IDhLevel>
 	protected FullDataSourceV1 createDataSourceFromDto(FullDataSourceV1DTO dto) throws InterruptedException, IOException, DataCorruptedException
 	{
 		FullDataSourceV1 dataSource = FullDataSourceV1.createEmpty(dto.pos);
-		dataSource.populateFromStream(dto, dto.getInputStream(), this.level);
+		try (DhDataInputStream inputStream = dto.getInputStream())
+		{
+			dataSource.populateFromStream(dto, inputStream, this.level);
+		}
 		return dataSource;
 	}
 	

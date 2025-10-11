@@ -26,9 +26,9 @@ import com.seibel.distanthorizons.core.network.event.internal.AbstractInternalEv
 import com.seibel.distanthorizons.core.network.messages.AbstractNetworkMessage;
 import com.seibel.distanthorizons.core.network.messages.AbstractTrackableMessage;
 import com.seibel.distanthorizons.core.network.messages.MessageRegistry;
+import com.seibel.distanthorizons.core.network.session.SessionClosedException;
 import com.seibel.distanthorizons.core.network.messages.requests.CancelMessage;
 import com.seibel.distanthorizons.core.network.messages.requests.ExceptionMessage;
-import com.seibel.distanthorizons.core.network.session.SessionClosedException;
 import com.seibel.distanthorizons.coreapi.ModInfo;
 import org.apache.logging.log4j.LogManager;
 

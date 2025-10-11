@@ -20,9 +20,10 @@
 package com.seibel.distanthorizons.core.util;
 
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiBlockMaterial;
+import com.seibel.distanthorizons.core.level.AbstractDhLevel;
+import com.seibel.distanthorizons.core.logging.SpamReducedLogger;
 import com.seibel.distanthorizons.core.dataObjects.render.columnViews.ColumnArrayView;
 import com.seibel.distanthorizons.core.dataObjects.render.columnViews.IColumnDataView;
-import com.seibel.distanthorizons.core.level.AbstractDhLevel;
 import com.seibel.distanthorizons.coreapi.ModInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,7 +73,10 @@ public class RenderDataPointUtil
 	
 	
 	public final static int EMPTY_DATA = 0;
-	public final static int MAX_WORLD_Y_SIZE = 4096;
+
+	// the maximum valid Y value is the maximum min y + world height.
+	// min y is [-2032, 2031], height is < 4064.
+	public final static int MAX_WORLD_Y_SIZE = 2031 + 4064;
 	
 	public final static int ALPHA_DOWNSIZE_SHIFT = 4;
 	

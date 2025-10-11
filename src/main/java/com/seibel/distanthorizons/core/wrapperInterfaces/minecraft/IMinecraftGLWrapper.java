@@ -22,6 +22,9 @@ package com.seibel.distanthorizons.core.wrapperInterfaces.minecraft;
 import com.seibel.distanthorizons.coreapi.interfaces.dependencyInjection.IBindable;
 import org.lwjgl.opengl.GL32;
 
+import java.util.ArrayList;
+import java.util.UUID;
+
 /**
  * Used to sync GL state changes between DH and MC.
  * This is specifically important for other mods that change MC's rendering like Iris.

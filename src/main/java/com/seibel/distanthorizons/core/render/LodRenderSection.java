@@ -19,13 +19,13 @@
 
 package com.seibel.distanthorizons.core.render;
 
+import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.cache.Cache;
 import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.dataObjects.fullData.sources.FullDataSourceV2;
 import com.seibel.distanthorizons.core.dataObjects.render.CachedColumnRenderSource;
 import com.seibel.distanthorizons.core.dataObjects.render.ColumnRenderSource;
-import com.seibel.distanthorizons.core.dataObjects.render.bufferBuilding.ColumnRenderBuffer;
 import com.seibel.distanthorizons.core.dataObjects.render.bufferBuilding.ColumnRenderBufferBuilder;
 import com.seibel.distanthorizons.core.dataObjects.render.bufferBuilding.LodQuadBuilder;
 import com.seibel.distanthorizons.core.dataObjects.transformers.FullDataToRenderDataTransformer;
@@ -34,11 +34,12 @@ import com.seibel.distanthorizons.core.enums.EDhDirection;
 import com.seibel.distanthorizons.core.file.fullDatafile.FullDataSourceProviderV2;
 import com.seibel.distanthorizons.core.level.IDhClientLevel;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
-import com.seibel.distanthorizons.core.pos.DhSectionPos;
 import com.seibel.distanthorizons.core.pos.blockPos.DhBlockPos2D;
+import com.seibel.distanthorizons.core.pos.DhSectionPos;
 import com.seibel.distanthorizons.core.render.glObject.GLProxy;
-import com.seibel.distanthorizons.core.render.renderer.DebugRenderer;
 import com.seibel.distanthorizons.core.render.renderer.IDebugRenderable;
+import com.seibel.distanthorizons.core.dataObjects.render.bufferBuilding.ColumnRenderBuffer;
+import com.seibel.distanthorizons.core.render.renderer.DebugRenderer;
 import com.seibel.distanthorizons.core.render.renderer.generic.BeaconRenderHandler;
 import com.seibel.distanthorizons.core.sql.dto.BeaconBeamDTO;
 import com.seibel.distanthorizons.core.sql.repo.BeaconBeamRepo;
@@ -46,22 +47,18 @@ import com.seibel.distanthorizons.core.util.KeyedLockContainer;
 import com.seibel.distanthorizons.core.util.threading.PriorityTaskPicker;
 import com.seibel.distanthorizons.core.util.threading.ThreadPoolUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.minecraft.IMinecraftClientWrapper;
+import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.WillNotClose;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
 
 /**
  * A render section represents an area that could be rendered.
@@ -72,25 +69,18 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 	private static final Logger LOGGER = DhLoggerBuilder.getLogger();
 	private static final IMinecraftClientWrapper MC = SingletonInjector.INSTANCE.get(IMinecraftClientWrapper.class);
 	
-	/**
-	 * Used to limit how many upload tasks are queued at once.
-	 * If all the upload tasks are queued at once, they will start uploading nearest
-	 * to the player, however if the player moves, that order is no longer valid and holes may appear
-	 * as further sections are loaded before closer ones.
-	 * Only queuing a few of the sections at a time solves this problem.
-	 */
-	public static final AtomicInteger GLOBAL_UPLOAD_TASKS_COUNT_REF = new AtomicInteger(0);
-	
 	
 	
 	public final long pos;
 	
 	private final IDhClientLevel level;
+	private final IClientLevelWrapper levelWrapper;
 	@WillNotClose
 	private final FullDataSourceProviderV2 fullDataSourceProvider;
 	private final LodQuadTree quadTree;
 	private final KeyedLockContainer<Long> renderLoadLockContainer;
 	private final Cache<Long, CachedColumnRenderSource> cachedRenderSourceByPos;
+	private final AtomicInteger uploadTaskCountRef;
 	
 	/** 
 	 * contains the list of beacons currently being rendered in this section 
@@ -152,7 +142,8 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 	public LodRenderSection(
 			long pos, 
 			LodQuadTree quadTree, 
-			IDhClientLevel level, FullDataSourceProviderV2 fullDataSourceProvider, 
+			IDhClientLevel level, FullDataSourceProviderV2 fullDataSourceProvider,
+			AtomicInteger uploadTaskCountRef,
 			Cache<Long, CachedColumnRenderSource> cachedRenderSourceByPos, KeyedLockContainer<Long> renderLoadLockContainer)
 	{
 		this.pos = pos;
@@ -160,11 +151,13 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 		this.cachedRenderSourceByPos = cachedRenderSourceByPos;
 		this.renderLoadLockContainer = renderLoadLockContainer;
 		this.level = level;
+		this.levelWrapper = level.getClientLevelWrapper();
 		this.fullDataSourceProvider = fullDataSourceProvider;
+		this.uploadTaskCountRef = uploadTaskCountRef;
 		
 		this.beaconRenderHandler = this.quadTree.beaconRenderHandler;
 		this.beaconBeamRepo = this.level.getBeaconBeamRepo();
-		
+			
 		DebugRenderer.register(this, Config.Client.Advanced.Debugging.DebugWireframe.showRenderSectionStatus);
 	}
 	
@@ -190,7 +183,7 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 			return false;
 		}
 		
-		PriorityTaskPicker.Executor executor = ThreadPoolUtil.getFileHandlerExecutor();
+		PriorityTaskPicker.Executor executor = ThreadPoolUtil.getRenderLoadingExecutor();
 		if (executor == null || executor.isTerminated())
 		{
 			return false;
@@ -200,20 +193,20 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 		// this means the closer (higher priority) tasks will load first.
 		// This also prevents issues where the nearby tasks are canceled due to
 		// LOD detail level changing, and having holes in the world
-		if (GLOBAL_UPLOAD_TASKS_COUNT_REF.getAndIncrement() > executor.getPoolSize())
+		if (this.uploadTaskCountRef.getAndIncrement() > executor.getPoolSize())
 		{
-			GLOBAL_UPLOAD_TASKS_COUNT_REF.decrementAndGet();
+			this.uploadTaskCountRef.decrementAndGet();
 			return false;
 		}
 		
 		try
 		{
 			CompletableFuture<Void> future = new CompletableFuture<>();
-			this.getAndBuildRenderDataFuture = future;
+			this.getAndBuildRenderDataFuture = future; // TODO should use a setter/getter to guard against replacing an incomplete future
 			future.handle((voidObj, throwable) -> 
 			{
 				// this has to fire are the end of every added future, otherwise we'll lock up and nothing will load
-				GLOBAL_UPLOAD_TASKS_COUNT_REF.decrementAndGet(); 
+				this.uploadTaskCountRef.decrementAndGet(); // TODO there is an issue where this variable isn't decremented properly, preventing LODs from loading in, or loading much slower
 				return null; 
 			});
 			
@@ -274,6 +267,10 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 					adjacentLoadFutures[1] = this.getRenderSourceForPosAsync(DhSectionPos.getAdjacentPos(this.pos, EDhDirection.SOUTH));
 					adjacentLoadFutures[2] = this.getRenderSourceForPosAsync(DhSectionPos.getAdjacentPos(this.pos, EDhDirection.EAST));
 					adjacentLoadFutures[3] = this.getRenderSourceForPosAsync(DhSectionPos.getAdjacentPos(this.pos, EDhDirection.WEST));
+					//adjacentLoadFutures[0] = CompletableFuture.completedFuture(null);
+					//adjacentLoadFutures[1] = CompletableFuture.completedFuture(null);
+					//adjacentLoadFutures[2] = CompletableFuture.completedFuture(null);
+					//adjacentLoadFutures[3] = CompletableFuture.completedFuture(null);
 					return CompletableFuture.allOf(adjacentLoadFutures).thenRun(() ->
 					{
 						try (CachedColumnRenderSource northRenderSource = adjacentLoadFutures[0].get();
@@ -336,7 +333,7 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 			
 			
 			
-			PriorityTaskPicker.Executor executor = ThreadPoolUtil.getFileHandlerExecutor();
+			PriorityTaskPicker.Executor executor = ThreadPoolUtil.getRenderLoadingExecutor();
 			if (executor == null || executor.isTerminated())
 			{
 				// should only happen if the threadpool is actively being re-sized
@@ -352,7 +349,7 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 				// generate new render source
 				try (FullDataSourceV2 fullDataSource = this.fullDataSourceProvider.get(pos))
 				{
-					newCachedRenderSource.columnRenderSource = FullDataToRenderDataTransformer.transformFullDataToRenderSource(fullDataSource, this.level);
+					newCachedRenderSource.columnRenderSource = FullDataToRenderDataTransformer.transformFullDataToRenderSource(fullDataSource, this.levelWrapper);
 				}
 				catch (Exception e)
 				{
@@ -513,24 +510,21 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 	
 	public void tryQueuingMissingLodRetrieval()
 	{
-		if (this.fullDataSourceProvider.canRetrieveMissingDataSources() && this.fullDataSourceProvider.canQueueRetrieval())
+		if (this.fullDataSourceProvider.canRetrieveMissingDataSources() 
+			&& this.fullDataSourceProvider.canQueueRetrieval())
 		{
 			// calculate the missing positions if not already done
 			if (this.missingGenerationPosFunc == null)
 			{
-				// TODO memoization may not be needed anymore.
-				//  The expiring cache was originally used to fix a bug with N-sized multiplayer retrieval.
-				//  In multiplayer, when moving into new chunks, DH would generate the highest quality LOD, causing it to load,
-				//  and since said LOD was incomplete, there were holes, and the LOD wouldn't be queued for additional
-				//  retrieval.
-				//  However this doesn't appear to be the case as of 2025-2-7, so we might be able to just retrieve the
-				//  positions once and keep them in memory forever.
-				//  Currently the timeout is set to 10 minutes to test if memoization is actually needed.
-				//  10 minutes allows for the LODs to eventually refresh while allowing us
-				//  to test if the memoization is actually needed.
+				// TODO memoization is needed for multiplayer, otherwise
+				//  new retrieval requests won't be submitted.
+				// TODO why is that the case? Shouldn't the missing positions be un-changing?
+				// TODO setting this value to low can cause world gen to slow down significantly
+				//  due to a race condition where the world gen thinks it is finished, but the results
+				//  haven't been saved to file yet, causing the gen to fire again
 				this.missingGenerationPosFunc = Suppliers.memoizeWithExpiration(
 						() -> this.fullDataSourceProvider.getPositionsToRetrieve(this.pos),
-						10, TimeUnit.MINUTES)::get;
+						10, TimeUnit.MINUTES);
 			}
 			
 			LongArrayList missingGenerationPos = this.getMissingGenerationPos();
@@ -637,7 +631,6 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 	
 	
 	
-	
 	//==============//
 	// base methods //
 	//==============//
@@ -700,7 +693,7 @@ public class LodRenderSection implements IDebugRenderable, AutoCloseable
 		{
 			// remove the task from our executor if present
 			// note: don't cancel the task since that prevents cleanup, we just don't want it to run
-			PriorityTaskPicker.Executor executor = ThreadPoolUtil.getFileHandlerExecutor();
+			PriorityTaskPicker.Executor executor = ThreadPoolUtil.getRenderLoadingExecutor();
 			if (executor != null && !executor.isTerminated())
 			{
 				Runnable runnable = this.getAndBuildRenderDataRunnable;

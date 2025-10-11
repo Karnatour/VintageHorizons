@@ -19,13 +19,13 @@
 
 package com.seibel.distanthorizons.core.enums;
 
-import com.seibel.distanthorizons.core.util.math.Vec3i;
-
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import com.seibel.distanthorizons.core.util.math.Vec3i;
 
 /**
  * An (almost) exact copy of Minecraft's
@@ -44,17 +44,17 @@ import java.util.stream.Collectors;
 public enum EDhDirection
 {
 	/** negative Y */
-	DOWN(0, 1, -1, "down", AxisDirection.NEGATIVE, Axis.Y, new Vec3i(0, -1, 0)),
+	DOWN(0, 1, -1, "down", EDhDirection.AxisDirection.NEGATIVE, EDhDirection.Axis.Y, new Vec3i(0, -1, 0)),
 	/** positive Y */
-	UP(1, 0, -1, "up", AxisDirection.POSITIVE, Axis.Y, new Vec3i(0, 1, 0)),
+	UP(1, 0, -1, "up", EDhDirection.AxisDirection.POSITIVE, EDhDirection.Axis.Y, new Vec3i(0, 1, 0)),
 	/** negative Z */
-	NORTH(2, 3, 2, "north", AxisDirection.NEGATIVE, Axis.Z, new Vec3i(0, 0, -1)),
+	NORTH(2, 3, 2, "north", EDhDirection.AxisDirection.NEGATIVE, EDhDirection.Axis.Z, new Vec3i(0, 0, -1)),
 	/** positive Z */
-	SOUTH(3, 2, 0, "south", AxisDirection.POSITIVE, Axis.Z, new Vec3i(0, 0, 1)),
+	SOUTH(3, 2, 0, "south", EDhDirection.AxisDirection.POSITIVE, EDhDirection.Axis.Z, new Vec3i(0, 0, 1)),
 	/** negative X */
-	WEST(4, 5, 1, "west", AxisDirection.NEGATIVE, Axis.X, new Vec3i(-1, 0, 0)),
+	WEST(4, 5, 1, "west", EDhDirection.AxisDirection.NEGATIVE, EDhDirection.Axis.X, new Vec3i(-1, 0, 0)),
 	/** positive X */
-	EAST(5, 4, 3, "east", AxisDirection.POSITIVE, Axis.X, new Vec3i(1, 0, 0));
+	EAST(5, 4, 3, "east", EDhDirection.AxisDirection.POSITIVE, EDhDirection.Axis.X, new Vec3i(1, 0, 0));
 	
 	/**
 	 * Up, Down, West, East, North, South <br>
@@ -92,8 +92,8 @@ public enum EDhDirection
 //	private final int data2d;
 	
 	private final String name;
-	private final Axis axis;
-	private final AxisDirection axisDirection;
+	private final EDhDirection.Axis axis;
+	private final EDhDirection.AxisDirection axisDirection;
 	private final Vec3i normal;
 	private static final EDhDirection[] VALUES = values();
 	
@@ -134,7 +134,7 @@ public enum EDhDirection
 	
 	
 	
-	EDhDirection(int p_i46016_3_, int p_i46016_4_, int p_i46016_5_, String p_i46016_6_, AxisDirection p_i46016_7_, Axis p_i46016_8_, Vec3i p_i46016_9_)
+	EDhDirection(int p_i46016_3_, int p_i46016_4_, int p_i46016_5_, String p_i46016_6_, EDhDirection.AxisDirection p_i46016_7_, EDhDirection.Axis p_i46016_8_, Vec3i p_i46016_9_)
 	{
 //		this.data3d = p_i46016_3_;
 //		this.data2d = p_i46016_5_;
@@ -235,7 +235,7 @@ public enum EDhDirection
 //		return this.data2d;
 //	}
 	
-	public AxisDirection getAxisDirection()
+	public EDhDirection.AxisDirection getAxisDirection()
 	{
 		return this.axisDirection;
 	}
@@ -284,7 +284,7 @@ public enum EDhDirection
 		return this.name;
 	}
 	
-	public Axis getAxis()
+	public EDhDirection.Axis getAxis()
 	{
 		return this.axis;
 	}
@@ -315,17 +315,17 @@ public enum EDhDirection
 //		return from2DDataValue(MathHelper.floor(p_176733_0_ / 90.0D + 0.5D) & 3);
 //	}
 	
-	public static EDhDirection fromAxisAndDirection(Axis p_211699_0_, AxisDirection p_211699_1_)
+	public static EDhDirection fromAxisAndDirection(EDhDirection.Axis p_211699_0_, EDhDirection.AxisDirection p_211699_1_)
 	{
 		switch (p_211699_0_)
 		{
 			case X:
-				return p_211699_1_ == AxisDirection.POSITIVE ? EAST : WEST;
+				return p_211699_1_ == EDhDirection.AxisDirection.POSITIVE ? EAST : WEST;
 			case Y:
-				return p_211699_1_ == AxisDirection.POSITIVE ? UP : DOWN;
+				return p_211699_1_ == EDhDirection.AxisDirection.POSITIVE ? UP : DOWN;
 			case Z:
 			default:
-				return p_211699_1_ == AxisDirection.POSITIVE ? SOUTH : NORTH;
+				return p_211699_1_ == EDhDirection.AxisDirection.POSITIVE ? SOUTH : NORTH;
 		}
 	}
 
@@ -362,7 +362,7 @@ public enum EDhDirection
 //		return lodDirection;
 //	}
 	
-	public static EDhDirection get(AxisDirection p_181076_0_, Axis p_181076_1_)
+	public static EDhDirection get(EDhDirection.AxisDirection p_181076_0_, EDhDirection.Axis p_181076_1_)
 	{
 		for (EDhDirection lodDirection : VALUES)
 		{
@@ -433,9 +433,9 @@ public enum EDhDirection
 					}
 				};
 		
-		private static final Axis[] VALUES = values();
+		private static final EDhDirection.Axis[] VALUES = values();
 		
-		private static final Map<String, Axis> BY_NAME = Arrays.stream(VALUES).collect(Collectors.toMap(Axis::getName, (p_199785_0_) ->
+		private static final Map<String, EDhDirection.Axis> BY_NAME = Arrays.stream(VALUES).collect(Collectors.toMap(EDhDirection.Axis::getName, (p_199785_0_) ->
 		{
 			return p_199785_0_;
 		}));
@@ -446,7 +446,7 @@ public enum EDhDirection
 			this.name = name;
 		}
 		
-		public static Axis byName(String name)
+		public static EDhDirection.Axis byName(String name)
 		{
 			return BY_NAME.get(name.toLowerCase(Locale.ROOT));
 		}
@@ -527,7 +527,7 @@ public enum EDhDirection
 			return this.name;
 		}
 		
-		public AxisDirection opposite()
+		public EDhDirection.AxisDirection opposite()
 		{
 			return this == POSITIVE ? NEGATIVE : POSITIVE;
 		}
