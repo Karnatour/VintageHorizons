@@ -37,6 +37,7 @@ import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -257,13 +258,14 @@ public class ClientBlockStateColorCache
 	@Nullable
 	private List<BakedQuad> getQuadsForDirection(@Nullable EnumFacing direction)
 	{
-		List<BakedQuad> quads;
-		
-		quads = Minecraft.getMinecraft().getBlockRendererDispatcher()
-				.getModelForState(this.blockState)
-				.getQuads(this.blockState, direction, RANDOM.nextLong());
-		
-		return quads;
+		try {
+			return Minecraft.getMinecraft()
+					.getBlockRendererDispatcher()
+					.getModelForState(this.blockState)
+					.getQuads(this.blockState, direction, RANDOM.nextLong());
+		} catch (Exception e) {
+			return Collections.emptyList();
+		}
 	}
 	
 	@Nullable
