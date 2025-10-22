@@ -8,7 +8,7 @@ on:
 
 jobs:
     build:
-        runs-on: ubuntu-22.04
+        runs-on: windows-latest
         
         steps:
             - name: Checkout code
@@ -24,7 +24,7 @@ jobs:
               run: chmod +x ./gradlew
     
             - name: Build with Gradle
-              run: ./gradlew build
+              run: ./gradlew.bat build
 
             - name: Upload built jar
               uses: actions/upload-artifact@v4
