@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = RenderGlobal.class, priority = 1100) // Apply after Celeritas
+@Mixin(value = RenderGlobal.class, priority = 900)
 public class MixinRenderGlobal
 {
 	@Inject(
