@@ -52,5 +52,11 @@ public class RenderHelper {
 		} else {
 			GL32.glDisable(GL32.GL_BLEND);
 		}
+		
+		// Will probably cause issue when iris gets ported
+		GL32.glBindVertexArray(0);
+		GL32.glBindBuffer(GL32.GL_ARRAY_BUFFER, 0);
+		GL32.glBindBuffer(GL32.GL_ELEMENT_ARRAY_BUFFER, 0);
+		GL20.glUseProgram(0);
 	}
 }
