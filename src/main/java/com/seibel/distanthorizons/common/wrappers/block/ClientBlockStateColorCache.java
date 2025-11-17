@@ -28,6 +28,7 @@ import com.seibel.distanthorizons.forge.ForgeMain;
 import com.seibel.distanthorizons.modCompat.furenikusroads.FurenikusRoads;
 import com.seibel.distanthorizons.modCompat.immersiverailroading.ImmersiveRailroading;
 import com.seibel.distanthorizons.modCompat.quark.Quark;
+import com.seibel.distanthorizons.modCompat.sereneseasons.SereneSeasons;
 import com.seibel.distanthorizons.modCompat.thermaldynamics.ThermalExpansion;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
@@ -46,11 +47,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import sereneseasons.api.season.ISeasonColorProvider;
-import sereneseasons.config.BiomeConfig;
-import sereneseasons.handler.season.SeasonHandler;
-import sereneseasons.season.SeasonTime;
-import sereneseasons.util.SeasonColourUtil;
 import vazkii.quark.base.module.ModuleLoader;
 import vazkii.quark.client.feature.GreenerGrass;
 
@@ -458,11 +454,7 @@ public class ClientBlockStateColorCache
 		{
 			if (ForgeMain.IS_SERENE_SEASONS_LOADED)
 			{
-				int baseColor = biomeWrapper.biome.getGrassColorAtPos(mcPos);
-				SeasonTime calendar = SeasonHandler.getClientSeasonTime();
-				ISeasonColorProvider colorProvider = BiomeConfig.usesTropicalSeasons(biomeWrapper.biome) ? calendar.getTropicalSeason() : calendar.getSubSeason();
-				
-				tintColor = SeasonColourUtil.applySeasonalGrassColouring(colorProvider, biomeWrapper.biome, baseColor);
+				tintColor = SereneSeasons.applySereneSeasonsGrassTint(biomeWrapper.biome,biomeWrapper.biome.getGrassColorAtPos(mcPos)); 
 			}
 			else if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class))
 			{
@@ -477,11 +469,7 @@ public class ClientBlockStateColorCache
 		{
 			if (ForgeMain.IS_SERENE_SEASONS_LOADED)
 			{
-				int baseColor = biomeWrapper.biome.getFoliageColorAtPos(mcPos);
-				SeasonTime calendar = SeasonHandler.getClientSeasonTime();
-				ISeasonColorProvider colorProvider = BiomeConfig.usesTropicalSeasons(biomeWrapper.biome) ? calendar.getTropicalSeason() : calendar.getSubSeason();
-				
-				tintColor = SeasonColourUtil.applySeasonalFoliageColouring(colorProvider, biomeWrapper.biome, baseColor);
+				tintColor = SereneSeasons.applySereneSeasonsFoliageTint(biomeWrapper.biome,biomeWrapper.biome.getFoliageColorAtPos(mcPos));
 			}
 			else if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class) && GreenerGrass.affectFoliage)
 			{
