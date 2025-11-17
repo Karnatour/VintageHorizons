@@ -57,6 +57,6 @@ public class RenderHelper {
 		GL32.glBindVertexArray(0);
 		GL32.glBindBuffer(GL32.GL_ARRAY_BUFFER, 0);
 		GL32.glBindBuffer(GL32.GL_ELEMENT_ARRAY_BUFFER, 0);
-		GL20.glUseProgram(0);
+		GL32.glUseProgram(0);
 	}
 }

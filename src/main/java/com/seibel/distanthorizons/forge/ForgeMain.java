@@ -42,7 +42,7 @@ import java.util.function.Consumer;
  * If you are looking for the real start of the mod
  * check out the ClientProxy.
  */
-@Mod(modid = "distanthorizons", name = "DistantHorizons", version = "1.2.3")
+@Mod(modid = "distanthorizons", name = "DistantHorizons", version = "1.2.4")
 public class ForgeMain extends AbstractModInitializer
 {
 	
@@ -52,6 +52,7 @@ public class ForgeMain extends AbstractModInitializer
 	public static final boolean IS_BOTANIA_LOADED = Loader.isModLoaded("botania");
 	public static final boolean IS_LUCRAFT_LOADED = Loader.isModLoaded("lucraftcore");
 	public static final boolean IS_DYNAMICS_LOADED = Loader.isModLoaded("thermaldynamics");
+	public static final boolean IS_SERENE_SEASONS_LOADED = Loader.isModLoaded("sereneseasons");
 	
 	@Mod.Instance
 	public static ForgeMain instance;

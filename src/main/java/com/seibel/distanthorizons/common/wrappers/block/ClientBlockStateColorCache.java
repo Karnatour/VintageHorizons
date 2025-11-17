@@ -46,6 +46,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import sereneseasons.api.season.ISeasonColorProvider;
+import sereneseasons.config.BiomeConfig;
+import sereneseasons.handler.season.SeasonHandler;
+import sereneseasons.season.SeasonTime;
+import sereneseasons.util.SeasonColourUtil;
 import vazkii.quark.base.module.ModuleLoader;
 import vazkii.quark.client.feature.GreenerGrass;
 
@@ -258,12 +263,15 @@ public class ClientBlockStateColorCache
 	@Nullable
 	private List<BakedQuad> getQuadsForDirection(@Nullable EnumFacing direction)
 	{
-		try {
+		try
+		{
 			return Minecraft.getMinecraft()
 					.getBlockRendererDispatcher()
 					.getModelForState(this.blockState)
 					.getQuads(this.blockState, direction, RANDOM.nextLong());
-		} catch (Exception e) {
+		}
+		catch (Exception e)
+		{
 			return Collections.emptyList();
 		}
 	}
@@ -448,7 +456,15 @@ public class ClientBlockStateColorCache
 		Block block = this.blockState.getBlock();
 		if (block instanceof BlockGrass || block instanceof BlockBush)
 		{
-			if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class))
+			if (ForgeMain.IS_SERENE_SEASONS_LOADED)
+			{
+				int baseColor = biomeWrapper.biome.getGrassColorAtPos(mcPos);
+				SeasonTime calendar = SeasonHandler.getClientSeasonTime();
+				ISeasonColorProvider colorProvider = BiomeConfig.usesTropicalSeasons(biomeWrapper.biome) ? calendar.getTropicalSeason() : calendar.getSubSeason();
+				
+				tintColor = SeasonColourUtil.applySeasonalGrassColouring(colorProvider, biomeWrapper.biome, baseColor);
+			}
+			else if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class))
 			{
 				tintColor = Quark.applyQuarksGreenerGrassTint(biomeWrapper.biome.getGrassColorAtPos(mcPos));
 			}
@@ -459,7 +475,15 @@ public class ClientBlockStateColorCache
 		}
 		else if (block instanceof BlockLeaves || block instanceof BlockOldLeaf || block instanceof BlockNewLeaf)
 		{
-			if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class) && GreenerGrass.affectFoliage)
+			if (ForgeMain.IS_SERENE_SEASONS_LOADED)
+			{
+				int baseColor = biomeWrapper.biome.getFoliageColorAtPos(mcPos);
+				SeasonTime calendar = SeasonHandler.getClientSeasonTime();
+				ISeasonColorProvider colorProvider = BiomeConfig.usesTropicalSeasons(biomeWrapper.biome) ? calendar.getTropicalSeason() : calendar.getSubSeason();
+				
+				tintColor = SeasonColourUtil.applySeasonalFoliageColouring(colorProvider, biomeWrapper.biome, baseColor);
+			}
+			else if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class) && GreenerGrass.affectFoliage)
 			{
 				tintColor = Quark.applyQuarksGreenerGrassTint(biomeWrapper.biome.getFoliageColorAtPos(mcPos));
 			}
