@@ -1,12 +1,10 @@
-import org.jetbrains.changelog.Changelog
-
 plugins {
     id 'java'
     id 'java-library'
     id 'maven-publish'
-    id 'com.gradleup.shadow' version '9.0.0-beta12' // Remove this line and shadowJar task if you don't need shadow
-    id 'org.jetbrains.changelog' version '2.2.1'
+    id 'com.gradleup.shadow' version '9.0.2'
     id 'xyz.wagyourtail.unimined' version '1.4.1'
+    id 'net.kyori.blossom'  version '2.1.0'
 }
 
 apply from: 'gradle/scripts/helpers.gradle'
@@ -16,10 +14,6 @@ assertProperty 'mod_version'
 assertProperty 'root_package'
 assertProperty 'mod_id'
 assertProperty 'mod_name'
-
-if (propertyBool('generate_reference_class')) {
-    generateReferenceClass()
-}
 
 assertSubProperties 'use_access_transformer', 'access_transformer_locations'
 assertSubProperties 'is_coremod', 'coremod_includes_mod', 'coremod_plugin_class_name'
@@ -56,15 +50,15 @@ configurations {
     implementation.extendsFrom(embed)
     implementation.extendsFrom(contain)
     modCompileOnly
-    compileOnly.extendsFrom modCompileOnly
+    compileOnly.extendsFrom(modCompileOnly)
+    modRuntimeOnly
+    runtimeOnly.extendsFrom(modRuntimeOnly)
 }
-    
+
 unimined.minecraft {
-    
     version "1.12.2"
 
     mappings {
-        searge()
         mcp("stable", "39-1.12")
     }
 
@@ -72,18 +66,20 @@ unimined.minecraft {
         if (propertyBool('use_access_transformer')) {
             accessTransformer "${rootProject.projectDir}/src/main/resources/" +  propertyString('access_transformer_locations')
         }
-        loader "0.3.13-alpha"
+        loader "0.3.17-alpha"
         runs.auth.username = minecraft_username
         runs.all {
-            var map = getSystemProperties(); 
-            map["cleanroom.dev.mixin"] = "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json"
+            systemProperty("cleanroom.dev.mixin", "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json")
             def extraArgs = propertyString('extra_jvm_args')
             if (extraArgs != null && !extraArgs.trim().isEmpty()) {
                 jvmArgs += extraArgs.split("\\s+").toList()
             }
             if (propertyBool('enable_foundation_debug')) {
-                map.put('foundation.dump', 'true')
-                map.put('foundation.verbose', 'true')
+                systemProperty("foundation.dump", "true")
+                systemProperty("foundation.verbose", "true")
+            }
+            if (propertyBool('is_coremod')) {
+                systemProperty("fml.coreMods.load", propertyString('coremod_plugin_class_name'))
             }
             return
         }
@@ -91,15 +87,25 @@ unimined.minecraft {
 
     defaultRemapJar = false
 
-    remap(tasks.shadowJar) {
-        mixinRemap {
-            enableBaseMixin()
-            enableMixinExtra()
-            disableRefmap()
+    if (propertyBool('enable_shadow')) {
+        remap(tasks.shadowJar) {
+            mixinRemap {
+                enableBaseMixin()
+                enableMixinExtra()
+                disableRefmap()
+            }
+        }
+    } else {
+        remap(tasks.jar) {
+            mixinRemap {
+                enableBaseMixin()
+                enableMixinExtra()
+                disableRefmap()
+            }
         }
     }
-    
-    mods{
+
+    mods {
         remap(configurations.modCompileOnly)
     }
 }
@@ -147,11 +153,34 @@ processResources {
     rename '(.+_at.cfg)', 'META-INF/$1'
 }
 
+sourceSets {
+    main {
+        blossom {
+            javaSources {
+                property('mod_id', propertyString('mod_id'))
+                property('mod_name', propertyString('mod_name'))
+                property('mod_version', propertyString('mod_version'))
+                property('package', "${root_package}.${mod_id}")
+            }
+        }
+    }
+}
+
+if (!propertyBool('enable_shadow')) {
+    shadowJar.enabled = false
+}
+
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    doFirst{
+    if (configurations.contain.size() > 0) {
+        into('/') {
+            from configurations.contain
+        }
+    }
+    doFirst {
         manifest {
             def attribute_map = [:]
+            attribute_map['ModType'] = "CRL"
             attribute_map['MixinConfigs'] = "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json"
             if (configurations.contain.size() > 0) {
                 attribute_map['ContainedDeps'] = configurations.contain.collect { it.name }.join(' ')
@@ -171,7 +200,15 @@ jar {
     }
     if (propertyBool('enable_shadow')) {
         finalizedBy(tasks.named("remapShadowJar"))
+    } else {
+        finalizedBy(tasks.named("remapJar"))
     }
+}
+
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    archiveClassifier = "shadow"
 }
 
 compileTestJava {
@@ -186,31 +223,6 @@ test {
     if (propertyBool('show_testing_output')) {
         testLogging {
             showStandardStreams = true
-        }
-    }
-}
-
-String parserChangelog() {
-    if (!file('CHANGELOG.md').exists()) {
-        throw new GradleException('publish_with_changelog is true, but CHANGELOG.md does not exist in the workspace!')
-    }
-    String parsedChangelog = changelog.renderItem(
-            changelog.get(propertyString('mod_version')).withHeader(false).withEmptySections(false),
-            Changelog.OutputType.MARKDOWN)
-    if (parsedChangelog.isEmpty()) {
-        throw new GradleException('publish_with_changelog is true, but the changelog for the latest version is empty!')
-    }
-    return parsedChangelog
-}
-
-def generateReferenceClass() {
-    var target = new File("${rootProject.projectDir}/src/main/java/${root_package.replace('.', '/')}/${mod_id}/Reference.java")
-    var template = new File("${rootProject.projectDir}/template/Reference.java")
-    var replaceMap = [$package : "${root_package}.${mod_id}", $mod_id : mod_id, $mod_name : mod_name, $mod_version : mod_version]
-    target.withWriter { var writer ->
-        template.eachLine { var line ->
-            replaceMap.each {if (line.contains(it.key)) line = line.replace(it.key, it.value)}
-            writer.write(line + "\n");
         }
     }
 }
