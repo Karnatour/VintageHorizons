@@ -2,8 +2,8 @@ plugins {
     id 'java'
     id 'java-library'
     id 'maven-publish'
-    id 'com.gradleup.shadow' version '9.0.2'
-    id 'xyz.wagyourtail.unimined' version '1.4.1'
+    id 'com.gradleup.shadow' version '9.2.2'
+    id 'xyz.wagyourtail.unimined' version '1.4.7-kappa'
     id 'net.kyori.blossom'  version '2.1.0'
 }
 
@@ -66,20 +66,18 @@ unimined.minecraft {
         if (propertyBool('use_access_transformer')) {
             accessTransformer "${rootProject.projectDir}/src/main/resources/" +  propertyString('access_transformer_locations')
         }
-        loader "0.3.17-alpha"
+        loader "0.3.24-alpha"
         runs.auth.username = minecraft_username
         runs.all {
-            systemProperty("cleanroom.dev.mixin", "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json")
+            var map = getSystemProperties();
+            map["cleanroom.dev.mixin"] = "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json"
             def extraArgs = propertyString('extra_jvm_args')
             if (extraArgs != null && !extraArgs.trim().isEmpty()) {
                 jvmArgs += extraArgs.split("\\s+").toList()
             }
             if (propertyBool('enable_foundation_debug')) {
-                systemProperty("foundation.dump", "true")
-                systemProperty("foundation.verbose", "true")
-            }
-            if (propertyBool('is_coremod')) {
-                systemProperty("fml.coreMods.load", propertyString('coremod_plugin_class_name'))
+                map.put('foundation.dump', 'true')
+                map.put('foundation.verbose', 'true')
             }
             return
         }
@@ -107,6 +105,7 @@ unimined.minecraft {
 
     mods {
         remap(configurations.modCompileOnly)
+        remap(configurations.modRuntimeOnly)
     }
 }
 
@@ -172,15 +171,9 @@ if (!propertyBool('enable_shadow')) {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    if (configurations.contain.size() > 0) {
-        into('/') {
-            from configurations.contain
-        }
-    }
-    doFirst {
+    doFirst{
         manifest {
             def attribute_map = [:]
-            attribute_map['ModType'] = "CRL"
             attribute_map['MixinConfigs'] = "${mod_id}.default.mixin.json,${mod_id}.mod.mixin.json"
             if (configurations.contain.size() > 0) {
                 attribute_map['ContainedDeps'] = configurations.contain.collect { it.name }.join(' ')
