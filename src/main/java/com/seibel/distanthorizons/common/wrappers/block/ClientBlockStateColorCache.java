@@ -36,12 +36,15 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.color.BlockColors;
+import net.minecraft.client.renderer.color.IBlockColor;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
@@ -454,7 +457,7 @@ public class ClientBlockStateColorCache
 		{
 			if (ForgeMain.IS_SERENE_SEASONS_LOADED)
 			{
-				tintColor = SereneSeasons.applySereneSeasonsGrassTint(biomeWrapper.biome,biomeWrapper.biome.getGrassColorAtPos(mcPos)); 
+				tintColor = SereneSeasons.applySereneSeasonsGrassTint(biomeWrapper.biome, biomeWrapper.biome.getGrassColorAtPos(mcPos));
 			}
 			else if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class))
 			{
@@ -469,7 +472,7 @@ public class ClientBlockStateColorCache
 		{
 			if (ForgeMain.IS_SERENE_SEASONS_LOADED)
 			{
-				tintColor = SereneSeasons.applySereneSeasonsFoliageTint(biomeWrapper.biome,biomeWrapper.biome.getFoliageColorAtPos(mcPos));
+				tintColor = SereneSeasons.applySereneSeasonsFoliageTint(biomeWrapper.biome, biomeWrapper.biome.getFoliageColorAtPos(mcPos));
 			}
 			else if (ForgeMain.IS_QUARK_LOADED && ModuleLoader.isFeatureEnabled(GreenerGrass.class) && GreenerGrass.affectFoliage)
 			{
@@ -482,7 +485,7 @@ public class ClientBlockStateColorCache
 		}
 		else if (block instanceof BlockLiquid)
 		{
-			if (blockState.getMaterial() == Material.WATER)
+			if (blockState.getBlock() == Blocks.WATER || blockState.getBlock() == Blocks.FLOWING_WATER)
 			{
 				tintColor = biomeWrapper.biome.getWaterColor();
 			}
@@ -491,7 +494,13 @@ public class ClientBlockStateColorCache
 		{
 			try
 			{
-				tintColor = Minecraft.getMinecraft().getBlockColors().colorMultiplier(blockState, world, mcPos, blockColorInfo.tintIndex);
+				BlockColors blockColors = Minecraft.getMinecraft().getBlockColors();
+				tintColor = blockColors.colorMultiplier(blockState, world, mcPos, this.blockColorInfo.tintIndex);
+				
+				if (tintColor == -1)
+				{
+					tintColor = blockColors.getColor(blockState, world, mcPos);
+				}
 			}
 			catch (Exception e)
 			{
