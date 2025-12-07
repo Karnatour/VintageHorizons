@@ -7,6 +7,7 @@ This is my first mod — expect things to be broken, unfinished, or missing.
 ### Best Experience
 - ⚠ Due to slow world/LOD generation in-game, it is recommended to pre-generate your world. For example, you can use [Chunk-Pregenerator](https://www.curseforge.com/minecraft/mc-mods/chunkpregenerator) (it will pregen LOD also)
 - In modded worlds, I recommend setting the LOD distance to **96**
+- Works with Celeritas, Nothirium and Optifine (without shaders)
 
 ## Credits
 
@@ -15,7 +16,7 @@ This is my first mod — expect things to be broken, unfinished, or missing.
 
 
 ## Incompatibilities
-- ❌ **Not compatible with Optifine** (unless someone create PR for it) use [Celeritas](https://git.taumc.org/embeddedt/celeritas) instead
+- ❌ **Not compatible with Optifine shaders** (unless someone create PR for it)
 - ⚠ **Valkyrie's fog** Disable Valkyrie's fog in config
 
 ## Download
