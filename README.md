@@ -1,3 +1,7 @@
+# Use original [Distant Horizons](https://www.curseforge.com/minecraft/mc-mods/distant-horizons) instead, VintageHorizons is getting archived and won't recive new updates
+
+
+
 # Distant Horizons for 1.12.2
 
 ## Description
